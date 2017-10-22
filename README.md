@@ -1,5 +1,8 @@
 # MSSS
-Social science model with Matlab
+This is the repository for the course *Lecture with Computer Exercises: Modelling and Simulating Social Systems with MATLAB*. 
 
-This is a folder of Pedestrian Dynamics
-https://github.com/bskp/Foodtrails/tree/master/doc/16-Pedestrian%20Dynamics
+This repository contains our group's project: **How do participants act during an apéro at ETH?**
+
+Group menbers: Emek Barış Küçüktabak, Francesca Sabena, Emile Courthoud, Hangxi Li
+
+Current files: Research proposal, ppt for flash talk, papers for reference
