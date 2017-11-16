@@ -2,9 +2,16 @@ clc
 close all
 clear
 
+%Choose 1 if you want to save the static force field in a file, choose 0 if
+%you have already saved it and you just want to access to the saved file
+%data.
+doYouWantToUsedSavedForces = 0;
+
+
+
 % Definition of the (x,y) coordinate system (on bottom left)
-x_map = linspace(0,10,100);
-y_map = linspace(10,0,100);
+x_map = linspace(0,10,200);
+y_map = linspace(10,0,200);
 
 % Building the map
 [X_map,Y_map] = meshgrid(x_map,y_map);
@@ -34,21 +41,31 @@ wallRepulsionConstant = 1;
 
 % Calculation of the static force gradient in the map determined by the
 % repulsive forces of the walls
-disp('It is better to save the static forces matrices in a file and just open the file in the main script')
+
+if doYouWantToUsedSavedForces ~= 0
+    [static_fx,static_fy] = readForceFile();
+else 
+    tic
+    disp('It is better to save the static forces matrices in a file and just open the file in the main script')
+    for i=1:max(size(wall(1,1,:)))
+        [static_fx,static_fy] = staticForceFunction(wall(:,:,i),X_map,Y_map,static_fx,static_fy,distanceAmongPointsOnTheWall,wallRepulsionConstant);
+    end
+    toc
+    saveForcesInFiles(static_fx,static_fy);
+end
+
+coloringTheMap(static_fx,static_fy,distanceAmongPointsOnTheWall,X_map,Y_map,wallRepulsionConstant)
 for i=1:max(size(wall(1,1,:)))
-    [static_fx,static_fy] = staticForceFunction(wall(:,:,i),X_map,Y_map,static_fx,static_fy,distanceAmongPointsOnTheWall,wallRepulsionConstant);
+    wallPlotter(wall(:,:,i));
 end
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 
 % Example of a person in the map
-person = [5 8];
+person = [3.2 7.5];
 % Calculation (and plot) of the forces applied by wall on that person
+tic
 [wall_fx,wall_fy]=person_wallInteraction(person,static_fx,static_fy,X_map,Y_map);
-
-
-
-
-
+toc
 
 
 
@@ -73,11 +90,6 @@ wall_y_end = wall(1,2)+ lengthOfTheWall/sqrt(1+1/angular_coeff^2)*(-1)^( wall(2,
 x_wall = linspace(wall(1,1),wall_x_end,numberOfPointsOnTheWall);
 y_wall = linspace(wall(1,2),wall_y_end,numberOfPointsOnTheWall);
 
-%Plot of the discretized wall
-figure(1)
-hold on
-plot(x_wall,y_wall,'r')
-hold off
 
 % Small approximation: no points of the wall can coincide with a point in 
 %the map, otherwise I'll get a zero distance between point and wall, i.e.
@@ -173,12 +185,77 @@ wall_fy = sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
 % person
 figure(1)
 hold on
-plot(person(1),person(2),'ro')
-plot(x_edges,y_edges,'b+')
-quiver(x_edges,y_edges,fx_edges./(fx_edges.^2+fy_edges.^2).^(1/2),fy_edges./(fx_edges.^2+fy_edges.^2).^(1/2),0.9)
-quiver(person(1),person(2),wall_fx/(wall_fx^2+wall_fy^2).^(1/2),wall_fy/(wall_fx^2+wall_fy^2).^(1/2),0.8)
+plot(person(1),person(2),'bo')
+plot(x_edges,y_edges,'r+')
+q = quiver(x_edges,y_edges,fx_edges./(fx_edges.^2+fy_edges.^2).^(1/2),fy_edges./(fx_edges.^2+fy_edges.^2).^(1/2),3.5);
+q.Color = 'red';
+q.LineWidth  =0.9;
+q = quiver(person(1),person(2),wall_fx/(wall_fx^2+wall_fy^2).^(1/2),wall_fy/(wall_fx^2+wall_fy^2).^(1/2),0.3);
+q.Color = 'yellow';
+q.LineWidth  = 2;
+q.MaxHeadSize = 0.6;
+
 hold off
 end
 
+function saveForcesInFiles(static_fx,static_fy)
+fileID = fopen('wall_fx.txt','w');
+fprintf(fileID,'%f\n',static_fx);
+fclose(fileID);
+
+fileID = fopen('wall_fy.txt','w');
+fprintf(fileID,'%f\n',static_fy);
+fclose(fileID);
+end
 
 
+function [static_fx,static_fy] = readForceFile()
+fileID = fopen('wall_fx.txt','r');
+static_fx =fscanf(fileID,'%f');
+static_fx = reshape(static_fx,[sqrt(max(size(static_fx))),sqrt(max(size(static_fx)))]);
+fclose(fileID);
+
+fileID = fopen('wall_fy.txt','r');
+static_fy =fscanf(fileID,'%f');
+static_fy = reshape(static_fy,[sqrt(max(size(static_fy))),sqrt(max(size(static_fy)))]);
+fclose(fileID);
+end
+
+
+function coloringTheMap(static_fx,static_fy,distanceAmongPointsOnTheWall,X_map,Y_map,wallRepulsionConstant)
+
+statif_tot_f = (static_fx.^2+static_fy.^2).^(1/2);
+Fmax = wallRepulsionConstant/(distanceAmongPointsOnTheWall^2);
+Fmin = wallRepulsionConstant/(max(max(X_map)/2)^2);
+%Smoothing the force field
+statif_tot_f(statif_tot_f>Fmax) = Fmax;
+statif_tot_f(statif_tot_f<Fmin) = Fmin;
+
+figure(1)
+hold on
+%Coloring the map
+% Create a sample image of a ramp.
+% Smoothing the map
+heatMap = (statif_tot_f./Fmax).^(1/4);
+
+
+% Display it.
+imagesc(X_map(1,1:end),Y_map(1:end,1),heatMap);
+%{
+% Initialize a color map array of 101 colors.
+colorMap = jet(30);
+% Apply the colormap and show the colorbar
+colormap(colorMap);
+%}
+colorbar;
+axis image;
+hold off
+end
+
+function wallPlotter(wall)
+%Plot of the discretized wall
+figure(1)
+hold on
+plot(wall(:,1),wall(:,2),'r')
+hold off
+end
