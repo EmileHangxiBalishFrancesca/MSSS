@@ -222,23 +222,23 @@ hold off
 end
 
 function saveForcesInFiles(static_fx,static_fy)
-fileID = fopen('wall_fx.txt','w');
+fileID = fopen('static_fx.txt','w');
 fprintf(fileID,'%f\n',static_fx);
 fclose(fileID);
 
-fileID = fopen('wall_fy.txt','w');
+fileID = fopen('static_fy.txt','w');
 fprintf(fileID,'%f\n',static_fy);
 fclose(fileID);
 end
 
 
 function [static_fx,static_fy] = readForceFile()
-fileID = fopen('wall_fx.txt','r');
+fileID = fopen('static_fx.txt','r');
 static_fx =fscanf(fileID,'%f');
 static_fx = reshape(static_fx,[sqrt(max(size(static_fx))),sqrt(max(size(static_fx)))]);
 fclose(fileID);
 
-fileID = fopen('wall_fy.txt','r');
+fileID = fopen('static_fy.txt','r');
 static_fy =fscanf(fileID,'%f');
 static_fy = reshape(static_fy,[sqrt(max(size(static_fy))),sqrt(max(size(static_fy)))]);
 fclose(fileID);
