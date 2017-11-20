@@ -89,13 +89,7 @@ end
 
 
 function [dx, dy] = objective_direction(person,food,table)
-
-%Example
-%{
-food = [0 1; 4 7];
-table = [1 2; 4 6; 3 5];
-person = [0 2 1:7 1; 5 16 1:7 0; 0 4 1:7 0];
-%}
+%For now, the direction of the objective is simpli the direction towards the nearest food (or nearest table)
 
 N_p = max(size(person(:,1)));   
 N_t = max(size(table(:,1)));  
