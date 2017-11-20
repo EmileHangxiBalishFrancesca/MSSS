@@ -5,16 +5,19 @@ clear
 %Choose 1 if you want to save the static force field in a file, choose 0 if
 %you have already saved it and you just want to access to the saved file
 %data.
-doYouWantToUsedSavedForces = 0;
+doYouWantToUsedSavedForces = 1;
+%Choose 1 if you want to record a video about the construction of the
+%static force field.
+%IT TAKES HOURS
+doYouWantToMakeAVideo = 0;
 
 
 
 % Definition of the (x,y) coordinate system (on bottom left)
 x_map = linspace(0,10,200);
-y_map = linspace(10,0,200);
-
+y_map = linspace(0,10,200);
 % Building the map
-[X_map,Y_map] = meshgrid(x_map,y_map);
+[X_map,Y_map] = meshgrid(x_map,y_map(end:-1:1));
 
 % Initializing the static force field to zero
 static_fx = zeros(max(size(x_map)));
@@ -46,13 +49,29 @@ if doYouWantToUsedSavedForces ~= 0
     [static_fx,static_fy] = readForceFile();
 else 
     tic
-    disp('It is better to save the static forces matrices in a file and just open the file in the main script')
     for i=1:max(size(wall(1,1,:)))
         [static_fx,static_fy] = staticForceFunction(wall(:,:,i),X_map,Y_map,static_fx,static_fy,distanceAmongPointsOnTheWall,wallRepulsionConstant);
     end
     toc
     saveForcesInFiles(static_fx,static_fy);
+    
 end
+
+
+
+if doYouWantToMakeAVideo == 1
+    static_fx = zeros(max(size(x_map)));
+    static_fy = zeros(max(size(x_map)));
+    writerObj = VideoWriter('video.avi');
+    writerObj.FrameRate = 60;
+    open(writerObj);
+    for i=1:max(size(wall(1,1,:)))
+        [static_fx,static_fy] = recordVideo(writerObj,wall(:,:,i),X_map,Y_map,static_fx,static_fy,distanceAmongPointsOnTheWall,wallRepulsionConstant);
+
+    end
+    close(writerObj);
+end
+
 
 coloringTheMap(static_fx,static_fy,distanceAmongPointsOnTheWall,X_map,Y_map,wallRepulsionConstant)
 for i=1:max(size(wall(1,1,:)))
@@ -66,6 +85,11 @@ person = [3.2 7.5];
 tic
 [wall_fx,wall_fy]=person_wallInteraction(person,static_fx,static_fy,X_map,Y_map);
 toc
+
+
+
+
+
 
 
 
@@ -113,10 +137,8 @@ end
 % Probably this part can be optimized by using the function gradient
 for k=1:numberOfPointsOnTheWall
     static_fx = static_fx + wallRepulsionConstant.*(X_map-x_wall(k))./((X_map-x_wall(k)).^2+(Y_map-y_wall(k)).^2).^(3/2);
-    static_fy  = static_fy + wallRepulsionConstant.*(Y_map-y_wall(k))./((X_map-x_wall(k)).^2+(Y_map-y_wall(k)).^2).^(3/2);
+    static_fy = static_fy + wallRepulsionConstant.*(Y_map-y_wall(k))./((X_map-x_wall(k)).^2+(Y_map-y_wall(k)).^2).^(3/2);
 end
-
-
 
 end
 
@@ -180,7 +202,7 @@ distPerson_edge = ( (x_edges-person(1)).^2   + (y_edges-person(2)).^2 ).^(1/2);
 wall_fx = sum(fx_edges.*distPerson_edge)/sum(distPerson_edge);
 wall_fy = sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
 
-
+%{
 % Plot of the four points, the person position at the forces applied on the
 % person
 figure(1)
@@ -196,6 +218,7 @@ q.LineWidth  = 2;
 q.MaxHeadSize = 0.6;
 
 hold off
+%}
 end
 
 function saveForcesInFiles(static_fx,static_fy)
@@ -236,7 +259,7 @@ hold on
 %Coloring the map
 % Create a sample image of a ramp.
 % Smoothing the map
-heatMap = (statif_tot_f./Fmax).^(1/4);
+heatMap = (statif_tot_f./Fmax).^(1/3);
 
 
 % Display it.
@@ -258,4 +281,138 @@ figure(1)
 hold on
 plot(wall(:,1),wall(:,2),'r')
 hold off
+end
+
+function [static_fx,static_fy] = recordVideo(writerObj,wall,X_map,Y_map,static_fx,static_fy,distanceAmongPointsOnTheWall,wallRepulsionConstant)
+
+%SAME CODE FOR THE CALCULATION OF THE FORCE
+% Discretization of the wall
+lengthOfTheWall = sqrt( (wall(1,1)-wall(2,1))^2 + (wall(1,2)-wall(2,2))^2);
+numberOfPointsOnTheWall = floor(lengthOfTheWall/distanceAmongPointsOnTheWall);
+angular_coeff = (wall(1,2)-wall(2,2))/(wall(1,1)-wall(2,1));
+wall_x_end = wall(1,1)+ lengthOfTheWall/sqrt(1+angular_coeff^2)*(-1)^( wall(2,1)<wall(1,1));
+wall_y_end = wall(1,2)+ lengthOfTheWall/sqrt(1+1/angular_coeff^2)*(-1)^( wall(2,2)<wall(1,2));
+
+%Now the wall is discretized into several points. The distance between the
+% points is constant for all walls.
+x_wall = linspace(wall(1,1),wall_x_end,numberOfPointsOnTheWall);
+y_wall = linspace(wall(1,2),wall_y_end,numberOfPointsOnTheWall);
+
+
+% Small approximation: no points of the wall can coincide with a point in 
+%the map, otherwise I'll get a zero distance between point and wall, i.e.
+%an infinite force.
+% If it occurs, the the wall is slightly moved.
+bolean_variable = 1;
+while(bolean_variable ==1)
+    for i = 1:numberOfPointsOnTheWall
+        bolean_variable = 1;
+        if sum(Y_map(X_map==x_wall(i))==wall(1,2))~=0
+            x_wall = linspace(wall(1,1)+max(max(X_map))/1e6,wall_x_end+max(max(X_map))/1e6,numberOfPointsOnTheWall);
+            continue;
+        else
+            bolean_variable = 0;
+        end
+    end
+end
+
+
+% Calculation of the effect of the wall
+% Probably this part can be optimized by using the function gradient
+wall_fx = zeros(size(static_fx));
+wall_fy = zeros(size(static_fy));
+for k=1:numberOfPointsOnTheWall
+    wall_fx = wall_fx + wallRepulsionConstant.*(X_map-x_wall(k))./((X_map-x_wall(k)).^2+(Y_map-y_wall(k)).^2).^(3/2);
+    wall_fy = wall_fy + wallRepulsionConstant.*(Y_map-y_wall(k))./((X_map-x_wall(k)).^2+(Y_map-y_wall(k)).^2).^(3/2);
+end
+
+
+
+
+
+
+line =@(y0,x0,m,x) y0 + m.*(x-x0);
+
+%Initialization of the map tracking the distance of every point from the
+%wall
+distWall = zeros(size(X_map));
+%m must be different from infinite
+if wall(1,2)~=wall(2,2)
+    y1 = max(wall(:,2));
+    x1 = (wall(:,2)==y1)'*[wall(1,1);wall(2,1)];
+    y0 = min(wall(:,2));
+    x0 = (wall(:,2)==y0)'*[wall(1,1);wall(2,1)];
+    
+    if wall(1,1)~=wall(2,1)
+        % Angular coefficient of the perpendicular line to the wall
+        m = (wall(1,2)-wall(2,2))/(wall(1,1)-wall(2,1));
+        mp = - 1/m;
+        distWall(distWall==0) = abs(wall(1,2)-m*wall(1,1)+m.*X_map(distWall==0)-Y_map(distWall==0))/sqrt(1+m^2);
+    else
+        mp = 0;
+        distWall(Y_map<=y1 & Y_map>=y0) = abs(X_map(Y_map<=y1 & Y_map>=y0)-x0);
+    end
+    distWall(Y_map>line(y1,x1,mp,X_map)) = sqrt((X_map(Y_map>line(y1,x1,mp,X_map)) -x1).^2+(Y_map(Y_map>line(y1,x1,mp,X_map)) -y1).^2);
+    distWall(Y_map<line(y0,x0,mp,X_map)) = sqrt((X_map(Y_map<line(y0,x0,mp,X_map)) -x0).^2+(Y_map(Y_map<line(y0,x0,mp,X_map)) -y0).^2);
+    %surf(X_map,Y_map,distWall)
+else
+    x1 = max(wall(:,1));
+    y1 = (wall(:,1)==x1)'*[wall(1,2);wall(2,2)];
+    x0 = min(wall(:,1));
+    y0 = (wall(:,1)==x1)'*[wall(1,2);wall(2,2)];
+    distWall(X_map<x0) = sqrt((X_map(X_map<x0) -x0).^2+(Y_map(X_map<x0) -y0).^2);
+    distWall(X_map>x1) = sqrt((X_map(X_map>x1) -x1).^2+(Y_map(X_map>x1) -y1).^2);
+    distWall(distWall==0) = abs(Y_map(distWall==0) -y0);
+    %surf(X_map,Y_map,distWall)
+
+end
+
+
+distMin = distanceAmongPointsOnTheWall;
+distMax = max(max(X_map));
+
+distWall(distWall>distMax) = distMax;
+
+updatedFx = static_fx;
+updatedFy = static_fy;
+fx = updatedFx./sqrt(updatedFx.^2+updatedFy.^2);
+fy = updatedFy./sqrt(updatedFx.^2+updatedFy.^2);
+figure(1);
+coloringTheMap(updatedFx,updatedFy,distanceAmongPointsOnTheWall,X_map,Y_map,wallRepulsionConstant)
+wallPlotter(wall);
+hold on
+q = quiver(X_map(1:3:end,1:3:end),Y_map(1:3:end,1:3:end),fx(1:3:end,1:3:end),fy(1:3:end,1:3:end),0.6);
+q.Color = 'red';
+hold off
+axis([0 max(max(X_map)) 0 max(max(Y_map))]);
+frame = getframe(gcf);
+writeVideo(writerObj,frame);
+pause(0.7)
+
+
+for i=10:-0.05:1
+    if((distMax).^(0.6)/i>=max(max(distWall)))
+        continue
+    end
+    updatedFx = static_fx;
+    updatedFy = static_fy;
+    updatedFx((distWall).^(0.6)<=(distMax).^(0.6)/i) = static_fx((distWall).^(0.6)<=(distMax).^(0.6)/i)+wall_fx((distWall).^(0.6)<=(distMax).^(0.6)/i);
+    updatedFy((distWall).^(0.6)<=(distMax).^(0.6)/i) = static_fy((distWall).^(0.6)<=(distMax).^(0.6)/i)+wall_fy((distWall).^(0.6)<=(distMax).^(0.6)/i);
+    fx = updatedFx./sqrt(updatedFx.^2+updatedFy.^2);
+    fy = updatedFy./sqrt(updatedFx.^2+updatedFy.^2);
+    
+    figure(1);
+    coloringTheMap(updatedFx,updatedFy,distanceAmongPointsOnTheWall,X_map,Y_map,wallRepulsionConstant)
+    wallPlotter(wall);
+    hold on
+    q = quiver(X_map(1:3:end,1:3:end),Y_map(1:3:end,1:3:end),fx(1:3:end,1:3:end),fy(1:3:end,1:3:end),0.6);
+    q.Color = 'red';
+    hold off
+    axis([0 max(max(X_map)) 0 max(max(Y_map))]);
+    frame = getframe(gcf);
+    writeVideo(writerObj,frame);
+    pause(0.1)
+end
+static_fx = static_fx + wall_fx;
+static_fy = static_fy + wall_fy;
 end
