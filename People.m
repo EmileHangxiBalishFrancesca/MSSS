@@ -14,8 +14,9 @@ N_f = 2;   % number of foods
 attributes_p = 10; %[x y vx vy fx fy C dx dy d]
 person = zeros(N_p,attributes_p);
 
-%Table attributes: position, table-to-people interaction constant
-attributes_t = 3; %[x y C]
+%Table attributes: position, table-to-people interaction constant, free or
+%not (free = 1, full =0)
+attributes_t = 4; %[x y C f]
 table = zeros(N_t,attributes_t);
 
 %Food attributes: position
@@ -43,6 +44,7 @@ person(:,2) = 3*rand(size(person(:,2)))+7;
 food = [4 0; 6 0];
 %Tables location
 table = 3*rand(size(table))+3;
+table(:,4)  = 1; %At first, all the tables are free
 %The wall position is defined in the "wall_Emile script"
 
 % Force field determined by the walls
@@ -74,7 +76,7 @@ for t=dt:dt:final_time
         person(i,5:6) = person(i,5:6) + person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map);
         %person(i,5:6) = person(i,5:6) + person_objective_force(person(i,:),other_stuff);
         %person(i,5:6) = person(i,5:6) + person_tables_force(person(i,:),other_stuff);
-         
+        %person(i,5:6) = person(i,5:6) + person_person_force(person,other_stuff)
         
         % Calculation of the position and velocity
         %person(i,1:4) = position_velocity(person(i,:),other_stuff);
@@ -91,10 +93,14 @@ end
 function [dx, dy] = objective_direction(person,food,table)
 %For now, the direction of the objective is simpli the direction towards the nearest food (or nearest table)
 
+%Neglecting the full table
+table = table(table(:,4)==1,:);
+
 N_p = max(size(person(:,1)));   
 N_t = max(size(table(:,1)));  
 N_f = max(size(food(:,1)));
 
+%
 %Every row is a person, every column a food point / table
 dist_food_person = sqrt((repelem(person(:,1),1,N_f)-repelem(food(:,1)',N_p,1)).^2+(repelem(person(:,2),1,N_f)-repelem(food(:,2)',N_p,1)).^2);
 dist_table_person = sqrt((repelem(person(:,1),1,N_t)-repelem(table(:,1)',N_p,1)).^2+(repelem(person(:,2),1,N_t)-repelem(table(:,2)',N_p,1)).^2);
@@ -137,6 +143,10 @@ function [fx fy] = person_objective_force(person,other_stuff)
 end
 
 function [fx fy] = person_tables_force(person,other_stuff)
+
+end
+
+function [fx fy] = person_person_force(person,other_stuff)
 
 end
 
