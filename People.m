@@ -15,7 +15,7 @@ attributes_p = 10; %[x y vx vy fx fy C dx dy d]
 person = zeros(N_p,attributes_p);
 
 %Table attributes: position, table-to-people interaction constant, free or
-%not (free = 1, full =0)
+%not (free = 0, full =1)
 attributes_t = 4; %[x y C f]
 table = zeros(N_t,attributes_t);
 
@@ -34,17 +34,17 @@ y_map = linspace(0,10,200);
 
 % Initialization of the attributes of people, food, table and map
 %People's initial position
-%????
-%People's initial velocity
 person(1:floor(N_p/2),1) = 2.5*rand(size(person(1:floor(N_p/2),1)));
 person(floor(N_p/2)+1:end,1) = 2.5*rand(size(person(floor(N_p/2)+1:end,1)))+7.5;
 person(:,2) = 3*rand(size(person(:,2)))+7;
+%People's initial velocity
+%????
 %People's initial destination is already set to zero (i.e the food)
 %Food location
 food = [4 0; 6 0];
 %Tables location
-table = 3*rand(size(table))+3;
-table(:,4)  = 1; %At first, all the tables are free
+table(:,1:2) = 3*rand(size(table(:,1:2)))+3;
+%At first, all the tables are free
 %The wall position is defined in the "wall_Emile script"
 
 % Force field determined by the walls
@@ -91,19 +91,25 @@ end
 
 
 function [dx, dy] = objective_direction(person,food,table)
-%For now, the direction of the objective is simpli the direction towards the nearest food (or nearest table)
-
+%For now, the direction of the objective is simply the direction towards the nearest food
+% (or nearest table, according to people's d, the objective).
 %Neglecting the full table
-table = table(table(:,4)==1,:);
-
-N_p = max(size(person(:,1)));   
+table = table(table(:,4)==0,:);
+ 
 N_t = max(size(table(:,1)));  
 N_f = max(size(food(:,1)));
+%Number of people that want to go toward a table of food
+N_p_food = max(size(person(person(:,10)==0)));  
+N_p_table = max(size(person(person(:,10)==1))); 
+% Division of the people that want to go toward a table of food into two 
+%matrices
+person_food = person(person(:,10)==0,:);
+person_table = person(person(:,10)==1,:);
 
 %
 %Every row is a person, every column a food point / table
-dist_food_person = sqrt((repelem(person(:,1),1,N_f)-repelem(food(:,1)',N_p,1)).^2+(repelem(person(:,2),1,N_f)-repelem(food(:,2)',N_p,1)).^2);
-dist_table_person = sqrt((repelem(person(:,1),1,N_t)-repelem(table(:,1)',N_p,1)).^2+(repelem(person(:,2),1,N_t)-repelem(table(:,2)',N_p,1)).^2);
+dist_food_person = sqrt((repelem(person_food(:,1),1,N_f)-repelem(food(:,1)',N_p_food,1)).^2+(repelem(person_food(:,2),1,N_f)-repelem(food(:,2)',N_p_food,1)).^2);
+dist_table_person = sqrt((repelem(person_table(:,1),1,N_t)-repelem(table(:,1)',N_p_table,1)).^2+(repelem(person_table(:,2),1,N_t)-repelem(table(:,2)',N_p_table,1)).^2);
 
 %If you are exactly on a table of on a food point, a numerical error would
 %appear. In order to avoid this problem, zero distances are approximanted
@@ -118,38 +124,35 @@ nearest_food = (dist_food_person'==min(dist_food_person'))'*(1:N_f)';
 nearest_table = (dist_table_person'==min(dist_table_person'))'*(1:N_t)';
 
 % Unit vectors pointing towards the nearest food
-dx_food = (food(nearest_food,1)-person(:,1))./min(dist_food_person')';
-dy_food = (food(nearest_food,2)-person(:,2))./min(dist_food_person')';
+dx_food = (food(nearest_food,1)-person_food(:,1))./min(dist_food_person')';
+dy_food = (food(nearest_food,2)-person_food(:,2))./min(dist_food_person')';
 % Unit vectors pointing towards the nearest table
-dx_table = (table(nearest_table,1)-person(:,1))./min(dist_table_person')';
-dy_table = (table(nearest_table,2)-person(:,2))./min(dist_table_person')';
+dx_table = (table(nearest_table,1)-person_table(:,1))./min(dist_table_person')';
+dy_table = (table(nearest_table,2)-person_table(:,2))./min(dist_table_person')';
 
 %disp('person(:,10)==0 means food, person(:,10)==1 means table')
-dx = dx_food.*(person(:,10)==0)+dx_table.*(person(:,10)==1);
-dy = dy_food.*(person(:,10)==0)+dy_table.*(person(:,10)==1);
-
+dx(person(:,10)==0) = dx_food;
+dx(person(:,10)==1) = dx_table;
+dy(person(:,10)==0) = dy_food;
+dy(person(:,10)==1) = dy_table;
 
 figure(1)
 title('Plot of the direction of the moving force (at first it points toward the food)')
 hold on
 plot(food(:,1),food(:,2),'r+',table(:,1),table(:,2),'b+',person(:,1),person(:,2),'g*')
-quiver(person(:,1),person(:,2),dx,dy,0.4)
+quiver(person(:,1),person(:,2),dx',dy',0.4)
 hold off
-
 end
 
 function [fx fy] = person_objective_force(person,other_stuff)
 
 end
-
 function [fx fy] = person_tables_force(person,other_stuff)
 
 end
-
 function [fx fy] = person_person_force(person,other_stuff)
 
 end
-
 function [x y vx vy] = position_velocity(person,other_stuff)
 
 end
