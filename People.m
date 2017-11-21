@@ -183,13 +183,13 @@ function [fx, fy] = person_person_force(person, people)
 %distance between the person and the other people 
 N_p = max(size(people(:,1)));
 dist_person_person_x = repelem(person(1),1,N_p)-people(:,1)';
-dist_person_person_x = dist_person_person_x(dist_person_person_x~=0);  %remove the self distance
+dist_person_person_x = dist_person_person_x(dist_person_person_x<=1e-9);  %remove the self distance
 dist_person_person_y = repelem(person(2),1,N_p)-people(:,2)';
-dist_person_person_y = dist_person_person_y(dist_person_person_y~=0); 
+dist_person_person_y = dist_person_person_y(dist_person_person_y<=1e-9); 
 
 C_p = person(7);
-fx = C_p*sum(dist_person_person_x./(abs(dist_person_person_x)));
-fy = C_p*sum(dist_person_person_y./(abs(dist_person_person_y)));
+fx = C_p*sum(dist_person_person_x./(abs(dist_person_person_x)).^3);
+fy = C_p*sum(dist_person_person_y./(abs(dist_person_person_y)).^3);
 end
 
 function [x, y, vx, vy] = update_position_velocity(person, dt)
