@@ -60,18 +60,14 @@ for t=dt:dt:final_time
     % Initializing the forces to zero
     person(:,5:6) = zeros(size(person(:,5:6)));
     
-    % EMILE: "In my opinion this for loop can be avoided, anyway to start
+    % EMILE: "In my opinion the people loop can be avoided, anyway to start
     % with a simple code probably it's better to use it. If you are able,
     % try to build the functions so that they can calculate the outcomes
     % also if they receive as input all the people at the same time. I did
     % it for the objective research, it was fun but hard.Good luck!"
-    
     [dx, dy] = objective_direction(person,food,table);
     
     for i = 1:N_p
-        % Updating the direction of the objective driving force
-        % person(i,8:9) = objective_direction(person(i,:),other_stuff);
-        
         % Calculation of the forces
         person(i,5:6) = person(i,5:6) + person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map);
         %person(i,5:6) = person(i,5:6) + person_objective_force(person(i,:),other_stuff);
