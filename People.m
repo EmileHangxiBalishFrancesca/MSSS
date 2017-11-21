@@ -16,7 +16,7 @@ person = zeros(N_p,attributes_p);
 
 %Table attributes: position, table-to-people interaction constant, free or
 %not (free = 0, full =1)
-attributes_t = 4; %[x y C f]
+attributes_t = 4; %[x y C_t f]
 table = zeros(N_t,attributes_t);
 
 %Food attributes: position
@@ -70,13 +70,13 @@ for t=dt:dt:final_time
     for i = 1:N_p
         % Calculation of the forces
         person(i,5:6) = person(i,5:6) + person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map);
-        %person(i,5:6) = person(i,5:6) + person_objective_force(person(i,:),other_stuff);
+        person(i,5:6) = person(i,5:6) + person_objective_force(person(i,:), food, table);
         %person(i,5:6) = person(i,5:6) + person_tables_force(person(i,:),other_stuff);
-        %person(i,5:6) = person(i,5:6) + person_person_force(person,other_stuff)
-        
-        % Calculation of the position and velocity
-        %person(i,1:4) = position_velocity(person(i,:),other_stuff);
-    end
+        person(i,5:6) = person(i,5:6) + person_person_force(person(i,:), person);
+     end   
+     % Calculation of the position and velocity
+     person(:, 1:4) = update_position_velocity(person, dt);
+    
 end
 
 
@@ -135,22 +135,68 @@ dy(person(:,10)==1) = dy_table;
 figure(1)
 title('Plot of the direction of the moving force (at first it points toward the food)')
 hold on
-plot(food(:,1),food(:,2),'r+',table(:,1),table(:,2),'b+',person(:,1),person(:,2),'g*')
+plot(food(:,1),food(:,2),'r+',table(:,1),table(:,2),'ro',person(:,1),person(:,2),'g*')
 quiver(person(:,1),person(:,2),dx',dy',0.4)
 hold off
 end
 
-function [fx fy] = person_objective_force(person,other_stuff)
+function [fx, fy] = person_objective_force(person, food, table)
+%This function is to calculate the forces between 
+%person and tables, person and foods. We assume that people are not only
+%attracted by nearest foods/tables, but also attracted by other relatively
+%distant foods and tables, with which it is possible for people to change
+%the directions of their heading because of the interference of other
+%people.
 
+%Neglecting the full table
+table = table(table(:,4)==0,:);
+ %Number of tables and foods we should consider
+N_t = max(size(table(:,1)));  
+N_f = max(size(food(:,1)));
+
+% Division of the people that want to go toward a table of food into two 
+%matrices
+person_food = person(person(10)==0,:);
+person_table = person(person(10)==1,:);
+
+%Calculate the distance between person and tables/foods
+dist_person_food_x = repelem(person_food(1),1,N_f)-food(:,1)';
+dist_person_food_y = repelem(person_food(2),1,N_f)-food(:,2)';
+
+dist_person_table_x = repelem(person_table(1),1,N_f)-table(:,1)';
+dist_person_table_y = repelem(person_table(2),1,N_f)-table(:,2)';
+
+if person(10)==0 %return force caused by foods
+    C_f = 1; %Food to person force rate
+    fx = C_f*sum(dist_person_food_x./(abs(dist_person_food_x)).^3);
+    fy = C_f*sum(dist_person_food_y./(abs(dist_person_food_y)).^3);
+elseif person(10)==1 %return force caused by tables
+    C_t = max(table(:, 3));
+    fx = C_t*sum(dist_person_table_x./(abs(dist_person_table_x)).^3);
+    fy = C_t*sum(dist_person_table_y./(abs(dist_person_table_y)).^3);
 end
-function [fx fy] = person_tables_force(person,other_stuff)
-
 end
-function [fx fy] = person_person_force(person,other_stuff)
 
+function [fx, fy] = person_person_force(person, people)
+%This function is to calculate the force caused by other people
+%Following is the distance between two people, every element represents the
+%distance between the person and the other people 
+N_p = max(size(people(:,1)));
+dist_person_person_x = repelem(person(1),1,N_p)-people(:,1)';
+dist_person_person_x = dist_person_person_x(dist_person_person_x~=0);  %remove the self distance
+dist_person_person_y = repelem(person(2),1,N_p)-people(:,2)';
+dist_person_person_y = dist_person_person_y(dist_person_person_y~=0); 
+
+C_p = person(7);
+fx = C_p*sum(dist_person_person_x./(abs(dist_person_person_x)));
+fy = C_p*sum(dist_person_person_y./(abs(dist_person_person_y)));
 end
-function [x y vx vy] = position_velocity(person,other_stuff)
 
+function [x, y, vx, vy] = update_position_velocity(person, dt)
+vx = person(:,3) + dt*person(:,5);
+vy = person(:,4) + dt*person(:,6);
+x = person(:,1) + dt*vx;
+y = person(:,2) + dt*vy;
 end
 
 function [fx,fy]=person_walls_force(person,static_fx,static_fy,X_map,Y_map)
@@ -201,6 +247,7 @@ distPerson_edge = ( (x_edges-person(1)).^2   + (y_edges-person(2)).^2 ).^(1/2);
 fx = sum(fx_edges.*distPerson_edge)/sum(distPerson_edge);
 fy = sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
 end
+
 function [static_fx,static_fy] = readForceFile()
 fileID = fopen('static_fx.txt','r');
 static_fx =fscanf(fileID,'%f');
@@ -212,7 +259,6 @@ static_fy =fscanf(fileID,'%f');
 static_fy = reshape(static_fy,[sqrt(max(size(static_fy))),sqrt(max(size(static_fy)))]);
 fclose(fileID);
 end
-
 
 function coloringTheMap(static_fx,static_fy,distanceAmongPointsOnTheWall,X_map,Y_map,wallRepulsionConstant)
 
@@ -228,7 +274,7 @@ hold on
 %Coloring the map
 % Create a sample image of a ramp.
 % Smoothing the map
-heatMap = (statif_tot_f./Fmax).^(1/3);
+heatMap = (statif_tot_f./Fmax).^(1/5);
 
 
 % Display it.
