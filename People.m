@@ -4,12 +4,12 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 20;   % number of people
+N_p = 5;   % number of people
 N_t = 10;  % number of table
 N_f = 2;   % number of foods
 
 %People's attributes: position, velocity, undergoing force,
-%person-to-person interaction constant, destination direction, type of  
+%person-to-person interaction constant, destination direction, type of
 %destination (food=0, table=1).
 attributes_p = 10; %[x y vx vy fx fy C dx dy d]
 person = zeros(N_p,attributes_p);
@@ -52,8 +52,8 @@ table(:,1:2) = 3*rand(size(table(:,1:2)))+3;
 coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 %Defining the time steps
-dt = 0.1;
-final_time = 0.1;
+dt = 0.5;
+final_time = 100;
 
 %MAIN LOOP:
 for t=dt:dt:final_time
@@ -66,23 +66,38 @@ for t=dt:dt:final_time
     % also if they receive as input all the people at the same time. I did
     % it for the objective research, it was fun but hard.Good luck!"
     [dx, dy] = objective_direction(person,food,table);
+    person(:,8:9) = [dx' dy']; % filling the destionations into the person matrix
     
     for i = 1:N_p
-        % Calculation of the forces
-        person(i,5:6) = person(i,5:6) + person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map);
-        person(i,5:6) = person(i,5:6) + person_objective_force(person(i,:), food, table);
-        %person(i,5:6) = person(i,5:6) + person_tables_force(person(i,:),other_stuff);
-        person(i,5:6) = person(i,5:6) + person_person_force(person(i,:), person);
-     end   
-     % Calculation of the position and velocity
-     person(:, 1:4) = update_position_velocity(person, dt);
+        
+        people = person;
+        people(i,:) = []; % getting rid of the row that belongs to i th person. this matrix is the matrix for the people other than i th person
+        
+        % Calculation of the forces. Previous verison looks OK. But it yields wrong answer. When it is used as A(x,y) = MultiOutFUnc(in)
+        % only the first value of the output is used. [x,y]=MultiOutFunc
+        % should be used
+        
+        %[fx_wall ,fy_wall] = person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map)
+        %person(i,5:6) = person(i,5:6) + [fx_wall fy_wall];
+        
+        [fx_objective , fy_objective] = person_objective_force(person(i,:), food, table)
+        person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
+        
+        %[fx_table fy_table] = person_tables_force(person(i,:),other_stuff);
+        %person(i,5:6) = person(i,5:6) + [fx_table fy_table];
+        
+        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt)
+        person(i,5:6) = person(i,5:6) + [fx_people fy_people];
+        
+    end
+    % Calculation of the position and velocity
+    % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
+    [x_upt , y_upt , vx_upt , vy_upt] = update_position_velocity(person, dt); % dummy variables
+    person(:, 1:4) = [x_upt y_upt vx_upt vy_upt];
+    
+    pause(1)
     
 end
-
-
-
-
-
 
 
 
@@ -91,13 +106,13 @@ function [dx, dy] = objective_direction(person,food,table)
 % (or nearest table, according to people's d, the objective).
 %Neglecting the full table
 table = table(table(:,4)==0,:);
- 
-N_t = max(size(table(:,1)));  
+
+N_t = max(size(table(:,1)));
 N_f = max(size(food(:,1)));
 %Number of people that want to go toward a table of food
-N_p_food = max(size(person(person(:,10)==0)));  
-N_p_table = max(size(person(person(:,10)==1))); 
-% Division of the people that want to go toward a table of food into two 
+N_p_food = max(size(person(person(:,10)==0)));
+N_p_table = max(size(person(person(:,10)==1)));
+% Division of the people that want to go toward a table of food into two
 %matrices
 person_food = person(person(:,10)==0,:);
 person_table = person(person(:,10)==1,:);
@@ -141,7 +156,7 @@ hold off
 end
 
 function [fx, fy] = person_objective_force(person, food, table)
-%This function is to calculate the forces between 
+%This function is to calculate the forces between
 %person and tables, person and foods. We assume that people are not only
 %attracted by nearest foods/tables, but also attracted by other relatively
 %distant foods and tables, with which it is possible for people to change
@@ -150,11 +165,11 @@ function [fx, fy] = person_objective_force(person, food, table)
 
 %Neglecting the full table
 table = table(table(:,4)==0,:);
- %Number of tables and foods we should consider
-N_t = max(size(table(:,1)));  
+%Number of tables and foods we should consider
+N_t = max(size(table(:,1)));
 N_f = max(size(food(:,1)));
 
-% Division of the people that want to go toward a table of food into two 
+% Division of the people that want to go toward a table of food into two
 %matrices
 person_food = person(person(10)==0,:);
 person_table = person(person(10)==1,:);
@@ -162,34 +177,51 @@ person_table = person(person(10)==1,:);
 %Calculate the distance between person and tables/foods
 dist_person_food_x = repelem(person_food(1),1,N_f)-food(:,1)';
 dist_person_food_y = repelem(person_food(2),1,N_f)-food(:,2)';
+dist_person_food = sqrt( dist_person_food_x.^2 + dist_person_food_y.^2 );
 
-dist_person_table_x = repelem(person_table(1),1,N_f)-table(:,1)';
-dist_person_table_y = repelem(person_table(2),1,N_f)-table(:,2)';
+% dist_person_table_x = repelem(person_table(1),1,N_t)-table(:,1)'; % Nf are changed with Nt
+% dist_person_table_y = repelem(person_table(2),1,N_t)-table(:,2)'; % This is correct right ??
 
 if person(10)==0 %return force caused by foods
-    C_f = 1; %Food to person force rate
-    fx = C_f*sum(dist_person_food_x./(abs(dist_person_food_x)).^3);
-    fy = C_f*sum(dist_person_food_y./(abs(dist_person_food_y)).^3);
-elseif person(10)==1 %return force caused by tables
+    C_f = 4; %Food to person force rate
+    fx = -C_f*sum(dist_person_food_x./(abs(dist_person_food)).^3); 
+    fy = -C_f*sum(dist_person_food_y./(abs(dist_person_food)).^3);
+    
+elseif person(10)==1 %return force caused by tables . % SHOULD BE ALSO CORRECTED. THIS IS WRONG
     C_t = max(table(:, 3));
     fx = C_t*sum(dist_person_table_x./(abs(dist_person_table_x)).^3);
     fy = C_t*sum(dist_person_table_y./(abs(dist_person_table_y)).^3);
 end
 end
 
-function [fx, fy] = person_person_force(person, people)
-%This function is to calculate the force caused by other people
+function [fx, fy] = person_people_force(person, people,dt)
+%This function is to calculate the force caused by person B to person A
 %Following is the distance between two people, every element represents the
-%distance between the person and the other people 
-N_p = max(size(people(:,1)));
-dist_person_person_x = repelem(person(1),1,N_p)-people(:,1)';
-dist_person_person_x = dist_person_person_x(dist_person_person_x>1e-9);  %remove the self distance
-dist_person_person_y = repelem(person(2),1,N_p)-people(:,2)';
-dist_person_person_y = dist_person_person_y(dist_person_person_y>1e-9); 
+%distance between the person and the other people
 
-C_p = person(7);
-fx = C_p*sum(dist_person_person_x./(abs(dist_person_person_x)).^3);
-fy = C_p*sum(dist_person_person_y./(abs(dist_person_person_y)).^3);
+A = 1; % Taken same as the paper
+B = 0.2; % same as paper
+
+N_p = max(size(people(:,1)));
+dist_person_people_x = (repelem(person(1),1,N_p)-people(:,1)')';
+dist_person_people_y = (repelem(person(2),1,N_p)-people(:,2)')';
+
+dist_person_people = sqrt(dist_person_people_x.^2 + dist_person_people_x.^2); % total distance between 2 persons
+
+y_x = (people(:,3) - person(3)*ones(size(people,1),1))*dt;
+y_y = (people(:,4) - person(4)*ones(size(people,1),1))*dt;
+
+b = sqrt( ( dist_person_people + sqrt( (dist_person_people_x - (people(:,3) - person(3))*dt).^2 + (dist_person_people_y - (people(:,4) - person(4))*dt).^2 ) ).^2 - (y_x.^2 + y_y.^2) ) / 2;
+
+f_part1 = A * exp(-b/B); % The repulsive potential
+f_part2 = (dist_person_people + sqrt((dist_person_people_x - y_x).^2 + (dist_person_people_y - y_y).^2 ) ) ./ (2*b);
+f_part3x = (dist_person_people_x ./ dist_person_people) + ( (dist_person_people_x - y_x) ./ sqrt( (dist_person_people_x - y_x).^2 + (dist_person_people_y - y_y).^2 ) );
+f_part3y = (dist_person_people_y ./ dist_person_people) + ( (dist_person_people_y - y_y) ./ sqrt( (dist_person_people_x - y_x).^2 + (dist_person_people_y - y_y).^2 ) );
+
+% arranging the force componenets. such that it has the direction of the distance between people
+fx = sum(f_part1 .* f_part2 * 0.5 .* f_part3x);
+fy = sum(f_part1 .* f_part2 * 0.5 .* f_part3y);
+
 end
 
 function [x, y, vx, vy] = update_position_velocity(person, dt)
@@ -204,10 +236,12 @@ function [fx,fy]=person_walls_force(person,static_fx,static_fy,X_map,Y_map)
 % The force applied by wall is an interpolation among the forces of the
 % nearest four points of the static field. In order to find four points, I
 % want that the position of each person doens't coincide with the edges of
-% the sides of the square connected the four points. 
-%Approximation: if this condition is not satisfied, I slightly move the 
+% the sides of the square connected the four points.
+%Approximation: if this condition is not satisfied, I slightly move the
 %person (in the following algorithm, I move it on top left).
 bolean_variable = 1;
+
+coef = 0.07; % this coefficient is added, because wall forces are huuge.
 while bolean_variable == 1
     if sum(person(1)==X_map)~=0
         person(1) = person(1) + max(max(X_map))/1e6;
@@ -241,11 +275,11 @@ fy_edges = static_fy(pos_xy);
 
 
 distPerson_edge = ( (x_edges-person(1)).^2   + (y_edges-person(2)).^2 ).^(1/2);
-% Calculating the average force applied on the person located among the 
+% Calculating the average force applied on the person located among the
 % four edges. The force is calculated as a weigthed average based on the
 % distance of the person from the four points.
-fx = sum(fx_edges.*distPerson_edge)/sum(distPerson_edge);
-fy = sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
+fx = coef*sum(fx_edges.*distPerson_edge)/sum(distPerson_edge);
+fy = coef*sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
 end
 
 function [static_fx,static_fy] = readForceFile()
