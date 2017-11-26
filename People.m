@@ -9,9 +9,9 @@ N_t = 10;  % number of table
 N_f = 2;   % number of foods
 
 %People's attributes: position, velocity, undergoing force,
-%person-to-person interaction constant, destination direction, type of
+%velocity relaxation time, destination direction, type of
 %destination (food=0, table=1).
-attributes_p = 10; %[x y vx vy fx fy C dx dy d]
+attributes_p = 10; %[x y vx vy fx fy T_p dx dy d]
 person = zeros(N_p,attributes_p);
 
 %Table attributes: position, table-to-people interaction constant, free or
@@ -40,6 +40,8 @@ person(:,2) = 3*rand(size(person(:,2)))+7;
 %People's initial velocity
 %????
 %People's initial destination is already set to zero (i.e the food)
+%Peoples's relaxtion time
+person(:,7) = 5*rand(size(person(:,7)));
 %Food location
 food = [4 0; 6 0];
 %Tables location
@@ -52,8 +54,8 @@ table(:,1:2) = 3*rand(size(table(:,1:2)))+3;
 coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 %Defining the time steps
-dt = 0.5;
-final_time = 100;
+dt = 0.4;
+final_time = 50;
 
 %MAIN LOOP:
 for t=dt:dt:final_time
@@ -80,13 +82,13 @@ for t=dt:dt:final_time
         %[fx_wall ,fy_wall] = person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map)
         %person(i,5:6) = person(i,5:6) + [fx_wall fy_wall];
         
-        [fx_objective , fy_objective] = person_objective_force(person(i,:), food, table)
+        [fx_objective , fy_objective] = person_objective_force(person(i,:));
         person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
         
         %[fx_table fy_table] = person_tables_force(person(i,:),other_stuff);
         %person(i,5:6) = person(i,5:6) + [fx_table fy_table];
         
-        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt)
+        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
     end
@@ -155,7 +157,7 @@ quiver(person(:,1),person(:,2),dx',dy',0.4)
 hold off
 end
 
-function [fx, fy] = person_objective_force(person, food, table)
+function [fx, fy] = person_objective_force(person)
 %This function is to calculate the forces between
 %person and tables, person and foods. We assume that people are not only
 %attracted by nearest foods/tables, but also attracted by other relatively
@@ -163,35 +165,41 @@ function [fx, fy] = person_objective_force(person, food, table)
 %the directions of their heading because of the interference of other
 %people.
 
-%Neglecting the full table
-table = table(table(:,4)==0,:);
-%Number of tables and foods we should consider
-N_t = max(size(table(:,1)));
-N_f = max(size(food(:,1)));
-
-% Division of the people that want to go toward a table of food into two
-%matrices
-person_food = person(person(10)==0,:);
-person_table = person(person(10)==1,:);
-
-%Calculate the distance between person and tables/foods
-dist_person_food_x = repelem(person_food(1),1,N_f)-food(:,1)';
-dist_person_food_y = repelem(person_food(2),1,N_f)-food(:,2)';
-dist_person_food = sqrt( dist_person_food_x.^2 + dist_person_food_y.^2 );
+% %Neglecting the full table
+% table = table(table(:,4)==0,:);
+% %Number of tables and foods we should consider
+% N_t = max(size(table(:,1)));
+% N_f = max(size(food(:,1)));
+% 
+% % Division of the people that want to go toward a table of food into two
+% %matrices
+% person_food = person(person(10)==0,:);
+% person_table = person(person(10)==1,:);
+% 
+% %Calculate the distance between person and tables/foods
+% dist_person_food_x = repelem(person_food(1),1,N_f)-food(:,1)';
+% dist_person_food_y = repelem(person_food(2),1,N_f)-food(:,2)';
+% dist_person_food = sqrt( dist_person_food_x.^2 + dist_person_food_y.^2 );
 
 % dist_person_table_x = repelem(person_table(1),1,N_t)-table(:,1)'; % Nf are changed with Nt
 % dist_person_table_y = repelem(person_table(2),1,N_t)-table(:,2)'; % This is correct right ??
 
-if person(10)==0 %return force caused by foods
-    C_f = 4; %Food to person force rate
-    fx = -C_f*sum(dist_person_food_x./(abs(dist_person_food)).^3); 
-    fy = -C_f*sum(dist_person_food_y./(abs(dist_person_food)).^3);
-    
-elseif person(10)==1 %return force caused by tables . % SHOULD BE ALSO CORRECTED. THIS IS WRONG
-    C_t = max(table(:, 3));
-    fx = C_t*sum(dist_person_table_x./(abs(dist_person_table_x)).^3);
-    fy = C_t*sum(dist_person_table_y./(abs(dist_person_table_y)).^3);
-end
+% if person(10)==0 %return force caused by foods
+%     C_f = 0.01; %Food to person force rate
+%     fx = -C_f*abs(sum(dist_person_food_x./(abs(dist_person_food)).^3)); 
+%     fy = -C_f*abs(sum(dist_person_food_y./(abs(dist_person_food)).^3));
+%     
+%     
+% elseif person(10)==1 %return force caused by tables . % SHOULD BE ALSO CORRECTED. THIS IS WRONG Hangxi: change it into -C_t
+%     C_t = 0.01*max(table(:, 3));
+%     fx = -C_t*abs(sum(dist_person_table_x./(abs(dist_person_table_x)).^3));
+%     fy = -C_t*abs(sum(dist_person_table_y./(abs(dist_person_table_y)).^3));
+%end
+
+T_relaxation = person(7);
+v0 = 1; 
+fx = (v0*person(8)-person(3))/T_relaxation;
+fy = (v0*person(9)-person(4))/T_relaxation;
 end
 
 function [fx, fy] = person_people_force(person, people,dt)
@@ -206,7 +214,7 @@ N_p = max(size(people(:,1)));
 dist_person_people_x = (repelem(person(1),1,N_p)-people(:,1)')';
 dist_person_people_y = (repelem(person(2),1,N_p)-people(:,2)')';
 
-dist_person_people = sqrt(dist_person_people_x.^2 + dist_person_people_x.^2); % total distance between 2 persons
+dist_person_people = sqrt(dist_person_people_x.^2 + dist_person_people_y.^2); % total distance between 2 persons
 
 y_x = (people(:,3) - person(3)*ones(size(people,1),1))*dt;
 y_y = (people(:,4) - person(4)*ones(size(people,1),1))*dt;
