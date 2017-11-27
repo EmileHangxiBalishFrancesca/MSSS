@@ -4,9 +4,22 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 5;   % number of people
+N_p = 4;   % number of people
 N_t = 10;  % number of table
 N_f = 2;   % number of foods
+
+% Desired velocity
+v0 = 1;
+% Limit velocity
+v_lim = 3*v0;
+
+% Wall constant repulsion
+C_w = 0.00001;
+
+% Person-person repulsion constants
+% Repulsion potential constants 
+A = 1; % Taken same as the paper
+B = 0.2; % same as paper
 
 %People's attributes: position, velocity, undergoing force,
 %velocity relaxation time, destination direction, type of
@@ -34,14 +47,12 @@ y_map = linspace(0,10,200);
 
 % Initialization of the attributes of people, food, table and map
 %People's initial position
-person(1:floor(N_p/2),1) = 2.5*rand(size(person(1:floor(N_p/2),1)));
-person(floor(N_p/2)+1:end,1) = 2.5*rand(size(person(floor(N_p/2)+1:end,1)))+7.5;
-person(:,2) = 3*rand(size(person(:,2)))+7;
+[person(:,1), person(:,2)] = people_initial_position(person,X_map,Y_map);
 %People's initial velocity
 %????
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
-person(:,7) = 5*rand(size(person(:,7)));
+person(:,7) = 4*rand(size(person(:,7)))+1;
 %Food location
 food = [4 0; 6 0];
 %Tables location
@@ -79,25 +90,25 @@ for t=dt:dt:final_time
         % only the first value of the output is used. [x,y]=MultiOutFunc
         % should be used
         
-        %[fx_wall ,fy_wall] = person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map)
-        %person(i,5:6) = person(i,5:6) + [fx_wall fy_wall];
+        [fx_wall ,fy_wall] = person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map,C_w);
+        person(i,5:6) = person(i,5:6) + [fx_wall fy_wall];
         
-        [fx_objective , fy_objective] = person_objective_force(person(i,:));
-        person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
+        [fx_objective , fy_objective] = person_objective_force(person(i,:),v0);
+        person(i,5:6) = person(i,5:6) + [fx_objective fy_objective]./100;
         
         %[fx_table fy_table] = person_tables_force(person(i,:),other_stuff);
         %person(i,5:6) = person(i,5:6) + [fx_table fy_table];
         
-        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt);
+        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
     end
     % Calculation of the position and velocity
     % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
-    [x_upt , y_upt , vx_upt , vy_upt] = update_position_velocity(person, dt); % dummy variables
+    [x_upt , y_upt , vx_upt , vy_upt] = update_position_velocity(person, dt,v_lim); % dummy variables
     person(:, 1:4) = [x_upt y_upt vx_upt vy_upt];
     
-    pause(1)
+    pause(0.1)
     
 end
 
@@ -109,11 +120,11 @@ function [dx, dy] = objective_direction(person,food,table)
 %Neglecting the full table
 table = table(table(:,4)==0,:);
 
-N_t = max(size(table(:,1)));
-N_f = max(size(food(:,1)));
+N_t = size(table(:,1),1);
+N_f = size(food(:,1),1);
 %Number of people that want to go toward a table of food
-N_p_food = max(size(person(person(:,10)==0)));
-N_p_table = max(size(person(person(:,10)==1)));
+N_p_food = size(person(person(:,10)==0),1);
+N_p_table = size(person(person(:,10)==1),1);
 % Division of the people that want to go toward a table of food into two
 %matrices
 person_food = person(person(:,10)==0,:);
@@ -157,7 +168,7 @@ quiver(person(:,1),person(:,2),dx',dy',0.4)
 hold off
 end
 
-function [fx, fy] = person_objective_force(person)
+function [fx, fy] = person_objective_force(person,v0)
 %This function is to calculate the forces between
 %person and tables, person and foods. We assume that people are not only
 %attracted by nearest foods/tables, but also attracted by other relatively
@@ -197,20 +208,17 @@ function [fx, fy] = person_objective_force(person)
 %end
 
 T_relaxation = person(7);
-v0 = 1; 
 fx = (v0*person(8)-person(3))/T_relaxation;
 fy = (v0*person(9)-person(4))/T_relaxation;
 end
 
-function [fx, fy] = person_people_force(person, people,dt)
+function [fx, fy] = person_people_force(person, people,dt,A,B)
 %This function is to calculate the force caused by person B to person A
 %Following is the distance between two people, every element represents the
 %distance between the person and the other people
 
-A = 1; % Taken same as the paper
-B = 0.2; % same as paper
 
-N_p = max(size(people(:,1)));
+N_p = size(people(:,1),1);
 dist_person_people_x = (repelem(person(1),1,N_p)-people(:,1)')';
 dist_person_people_y = (repelem(person(2),1,N_p)-people(:,2)')';
 
@@ -232,14 +240,23 @@ fy = sum(f_part1 .* f_part2 * 0.5 .* f_part3y);
 
 end
 
-function [x, y, vx, vy] = update_position_velocity(person, dt)
-vx = person(:,3) + dt*person(:,5);
-vy = person(:,4) + dt*person(:,6);
+function [x, y, vx, vy] = update_position_velocity(person, dt , v_lim)
+
+vx = person(:,3) + dt*person(:,5); % x velocity of a person
+vy = person(:,4) + dt*person(:,6); % y veloctiy of a person
+v = sqrt(vx.^2 + vy.^2); % speed  of a person 
+
+
+
+vx(v>100*v_lim) = v_lim .* vx(v>100*v_lim) ./ v(v>100*v_lim);
+vy(v>v_lim) = v_lim .* vy(v>v_lim) ./ v(v>v_lim);
+
 x = person(:,1) + dt*vx;
 y = person(:,2) + dt*vy;
+
 end
 
-function [fx,fy]=person_walls_force(person,static_fx,static_fy,X_map,Y_map)
+function [fx,fy]=person_walls_force(person,static_fx,static_fy,X_map,Y_map,C_w)
 
 % The force applied by wall is an interpolation among the forces of the
 % nearest four points of the static field. In order to find four points, I
@@ -249,7 +266,6 @@ function [fx,fy]=person_walls_force(person,static_fx,static_fy,X_map,Y_map)
 %person (in the following algorithm, I move it on top left).
 bolean_variable = 1;
 
-coef = 0.07; % this coefficient is added, because wall forces are huuge.
 while bolean_variable == 1
     if sum(person(1)==X_map)~=0
         person(1) = person(1) + max(max(X_map))/1e6;
@@ -286,8 +302,8 @@ distPerson_edge = ( (x_edges-person(1)).^2   + (y_edges-person(2)).^2 ).^(1/2);
 % Calculating the average force applied on the person located among the
 % four edges. The force is calculated as a weigthed average based on the
 % distance of the person from the four points.
-fx = coef*sum(fx_edges.*distPerson_edge)/sum(distPerson_edge);
-fy = coef*sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
+fx = C_w*sum(fx_edges.*distPerson_edge)/sum(distPerson_edge);
+fy = C_w*sum(fy_edges.*distPerson_edge)/sum(distPerson_edge);
 end
 
 function [static_fx,static_fy] = readForceFile()
@@ -340,4 +356,27 @@ fx = static_fx./sqrt(static_fx.^2+static_fy.^2);
 fy = static_fy./sqrt(static_fx.^2+static_fy.^2);
 quiver(X_map(1:3:end,1:3:end),Y_map(1:3:end,1:3:end),fx(1:3:end,1:3:end),fy(1:3:end,1:3:end),0.6)
 hold off
+end
+
+
+function [pos_x, pos_y] = people_initial_position(person,X_map,Y_map)
+N_p = size(person,1);
+boolean_variable = 1;
+while boolean_variable==1
+    person(1:floor(N_p/2),1) = 2*rand(size(person(1:floor(N_p/2),1)))+0.5;
+    person(floor(N_p/2)+1:end,1) = 2*rand(size(person(floor(N_p/2)+1:end,1)))+7.5;
+    person(:,2) = 2*rand(size(person(:,2)))+7.5;
+    dist_person_person_x_map = (repelem(person(:,1),1,N_p)-repelem(person(:,1),1,N_p)')';
+    dist_person_person_y_map = (repelem(person(:,2),1,N_p)-repelem(person(:,2),1,N_p)')';
+    dist_person_person_x = dist_person_person_x_map(dist_person_person_x_map~=0 & dist_person_person_y_map~=0)';
+    dist_person_person_x = reshape(dist_person_person_x,[],N_p)';
+    dist_person_person_y = dist_person_person_y_map(dist_person_person_x_map~=0 & dist_person_person_y_map~=0)';
+    dist_person_person_y = reshape(dist_person_person_y,[],N_p)';
+    tot_dist = (dist_person_person_x.^2+dist_person_person_y.^2).^(3/2);
+    if sum(tot_dist<abs(X_map(1,1)-X_map(1,2))*5)==0
+        boolean_variable=0;
+    end
+end
+pos_x = person(:,1);
+pos_y = person(:,2);
 end
