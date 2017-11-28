@@ -18,8 +18,11 @@ C_w = 0.0003;
 C_t = 0.001;
 % Maximum people near one table before it becomes full
 max_p = 6;
-% Distance at which people stay from the table
-min_d = 0.3;
+% Distance at which people stay from the table centre
+min_dist_table = 0.3;
+% Distance at which people stay from the objective (table border of food
+% point)
+min_dist_obj = 0.1;
 % Person-person repulsion constants
 % Repulsion potential constants 
 A = 1; % Taken same as the paper
@@ -27,9 +30,8 @@ B = 0.2; % same as paper
 
 %People's attributes: position, velocity, undergoing force,
 %velocity relaxation time, destination direction, type of
-%destination (food=0, table=1), index of the table the person is directed
-%to
-attributes_p = 11; %[x y vx vy fx fy T_p dx dy d n_table]
+%destination (food=0, table=1)
+attributes_p = 10; %[x y vx vy fx fy T_p obj_x obj_y d]
 person = zeros(N_p,attributes_p);
 
 %Table attributes: position, table-to-people interaction constant, free or
@@ -69,7 +71,7 @@ table(:,1:2) = [3.5 2; 3.5 4; 3.5 6; 6 2; 6 4; 6 6;];
 % person-table
 table(:,3) = C_t;
 table(:,5) = max_p;
-table(:,6) = min_d;
+table(:,6) = min_dist_table;
 %At first, all the tables are free
 %The wall position is defined in the "wall_Emile script"
 
@@ -86,10 +88,13 @@ for t=dt:dt:final_time
     % Initializing the forces to zero
     person(:,5:6) = zeros(size(person(:,5:6)));
     
-    [dx, dy, n_table] = objective_direction(person,food,table);
-    person(:,[8 9 11]) = [dx dy n_table]; % filling the destionations into the person matrix
+    [x_obj, y_obj] = objective_direction(person,food,table);
+    person(:,8:9) = [x_obj y_obj]; % filling the destionations into the person matrix
     plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy)
-
+    
+    fromPositionToDirections(person,table,food);
+    
+    
     for i = 1:N_p
         
         people = person;
@@ -102,10 +107,11 @@ for t=dt:dt:final_time
         [fx_wall ,fy_wall] = person_walls_force(person(i,:),static_fx,static_fy,X_map,Y_map,C_w);
         person(i,5:6) = person(i,5:6) + [fx_wall fy_wall];
         
-        [fx_objective , fy_objective] = person_objective_force(person(i,:),v0);
+        
+        [fx_objective , fy_objective] = person_objective_force(person(i,:),v0,table,food);
         person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
         
-        [fx_table, fy_table] = person_tables_force(person(i,:),table);
+        [fx_table, fy_table] = person_tables_force(person(i,:),table,food);
         person(i,5:6) = person(i,5:6) + [fx_table fy_table];
         
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B);
@@ -116,13 +122,33 @@ for t=dt:dt:final_time
     % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
     [x_upt , y_upt , vx_upt , vy_upt] = update_position_velocity(person, dt,v_lim); % dummy variables
     person(:, 1:4) = [x_upt y_upt vx_upt vy_upt];
-    %[person(:, 10)] = updating_objective(person,food,table);
+    [person(:, 10)] = updating_objective(person,food,table,min_dist_obj,min_dist_table);
     
     pause(0.1)
     
 end
 
-function [fx_table, fy_table] = person_tables_force(person,table)
+
+
+function d = updating_objective(person,food,table,min_dist_obj,min_dist_table)
+N_t = size(table,1);
+N_f = size(food,1);
+N_p = size(person,1);
+%Reasoning: the position of the people has been updated. If the person if
+%too close to the objective, it is stopped, positioned at a safety distance
+%and the objective is changed (from d=0 food to d=1 table or d=???? table
+%reached)
+dist_person_obj = ((person(:,1)-person(:,8)).^2+(person(:,2)-person(:,9)).^2).^(1/2);
+min_dist_obj = repelem(min_dist_obj,N_p,1) + (person(:,10)==1).*min_dist_table;
+
+%If the person is too close to the food (d=0), the objective becomes the
+%table (d = d+1 = 1)
+d = person(:,10) + (dist_person_obj<=min_dist_obj);
+
+
+end
+
+function [fx_table, fy_table] = person_tables_force(person,table,food)
 %This functions calculates the repulsion force of the table 
 
 % Number of tables
@@ -131,16 +157,16 @@ N_t = size(table,1);
 % Excluding the table that is the objective of one person (if he/she has
 % already taken the food.
 
+[dx, dy, nearest_objective] = fromPositionToDirections(person,table,food);
 if person(10)==1
-    table = table(1:N_t~=person(11),:);
+    table = table(1:N_t~=nearest_objective,:);
 end
 
 fx_table = sum(table(:,3).*(person(1)-table(:,1))./((table(:,1)-person(1)).^2 + (table(:,2)-person(2)).^2).^3/2);  
 fy_table = sum(table(:,3).*(person(2)-table(:,2))./((table(:,1)-person(1)).^2 + (table(:,2)-person(2)).^2).^3/2);  
 end
-        
 
-function [dx, dy,n_table] = objective_direction(person,food,table)
+function [x_obj, y_obj] = objective_direction(person,food,table)
 %For now, the direction of the objective is simply the direction towards the nearest food
 % (or nearest table, according to people's d, the objective).
 %Neglecting the full table
@@ -173,6 +199,15 @@ nearest_food = (dist_food_person'==min(dist_food_person'))'*(1:N_f)';
 %Identification of the nearest table to each person
 nearest_table = (dist_table_person'==min(dist_table_person'))'*(1:N_t)';
 %Saving the index of the nearest tables to each person
+
+x_obj(person(:,10)==0) = food(nearest_food,1);
+y_obj(person(:,10)==0) = food(nearest_food,2);
+x_obj(person(:,10)==1) = table(nearest_table,1);
+y_obj(person(:,10)==1) = table(nearest_table,2);
+%We prefer colunm vertors
+x_obj = reshape(x_obj,[],1); y_obj = reshape(y_obj,[],1);
+
+%{
 n_table = zeros(size(person(:,11)));
 n_table(person(:,10)==1) = nearest_table;
 
@@ -189,10 +224,10 @@ dx(person(:,10)==1) = dx_table;
 dy(person(:,10)==0) = dy_food;
 dy(person(:,10)==1) = dy_table;
 dx = reshape(dx,[],1); dy = reshape(dy,[],1);
-
+%}
 end
 
-function [fx, fy] = person_objective_force(person,v0)
+function [fx, fy] = person_objective_force(person,v0,table,food)
 %This function is to calculate the forces between
 %person and tables, person and foods. We assume that people are not only
 %attracted by nearest foods/tables, but also attracted by other relatively
@@ -230,10 +265,11 @@ function [fx, fy] = person_objective_force(person,v0)
 %     fx = -C_t*abs(sum(dist_person_table_x./(abs(dist_person_table_x)).^3));
 %     fy = -C_t*abs(sum(dist_person_table_y./(abs(dist_person_table_y)).^3));
 %end
+[dx, dy] = fromPositionToDirections(person,table,food);
 
 T_relaxation = person(7);
-fx = (v0*person(8)-person(3))/T_relaxation;
-fy = (v0*person(9)-person(4))/T_relaxation;
+fx = (v0*dx-person(3))/T_relaxation;
+fy = (v0*dy-person(4))/T_relaxation;
 end
 
 function [fx, fy] = person_people_force(person, people,dt,A,B)
@@ -384,8 +420,7 @@ end
 
 function plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy)
 
-dx = person(:,8);
-dy = person(:,9);
+[dx, dy] = fromPositionToDirections(person,table,food);
 
 figure(1)
 coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
@@ -418,4 +453,30 @@ while boolean_variable==1
 end
 pos_x = person(:,1);
 pos_y = person(:,2);
+end
+
+function [dx, dy, nearest_objective] = fromPositionToDirections(person,table,food)
+dist_person_objective_x = person(:,8) - person(:,1);
+dist_person_objective_y = person(:,9) - person(:,2);
+tot_dist_person_objective = (dist_person_objective_x.^2+dist_person_objective_y.^2).^(1/2);
+dx = dist_person_objective_x./tot_dist_person_objective;
+dy = dist_person_objective_y./tot_dist_person_objective;
+
+%Dividing the people into the ones looking for food or tables
+person_food = person(person(:,10)==0,:);
+person_table = person(person(:,10)==1,:);
+
+N_t = size(table,1);
+N_f = size(food,1);
+N_p_food = size(person_food,1);
+N_p_table = size(person_table,1);
+%Finding the index of the objective (to recognize it this index represent
+%food or table, look at person(:,10)  )
+
+nearest_objective_food = (repelem(person_food(:,8),1,N_f) == repelem(food(:,1)',N_p_food,1) & repelem(person_food(:,9),1,N_f) == repelem(food(:,2)',N_p_food,1))*(1:N_f)';
+nearest_objective_table = (repelem(person_table(:,8),1,N_t) == repelem(table(:,1)',N_p_table,1) & repelem(person_table(:,9),1,N_t) == repelem(table(:,2)',N_p_table,1))*(1:N_t)';
+
+nearest_objective(person(:,10)==0) = nearest_objective_food;
+nearest_objective(person(:,10)==1) = nearest_objective_table;
+
 end
