@@ -9,13 +9,13 @@ N_t = 6;  % number of table
 N_f = 2;   % number of foods
 
 % Desired velocity
-v0 = 0.5;
+v0 = 0.3;
 % Limit velocity
 v_lim = 2*v0;
 
 % Wall and tables constant repulsion
-C_w = 0.001;
-C_t = 0.0005;
+C_w = 0.0003;
+C_t = 0.001;
 % Maximum people near one table before it becomes full
 max_p = 6;
 % Distance at which people stay from the table
@@ -60,7 +60,7 @@ min_distance = abs(X_map(1,1)-X_map(1,2))*100/N_p; % Minimum initial distance am
 %????
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
-person(:,7) = 10*rand(size(person(:,7)))+5;
+person(:,7) = 0.5*rand(size(person(:,7)))+1;
 %Food location
 food = [3.5 0.2; 6 0.2];
 %Tables location
@@ -78,7 +78,7 @@ table(:,6) = min_d;
 coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 %Defining the time steps
-dt = 0.2;
+dt = 0.4;
 final_time = 50;
 
 %MAIN LOOP:
