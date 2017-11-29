@@ -15,7 +15,7 @@ v0 = 0.2;
 v_lim = 2*v0;
 
 % Wall and tables constant repulsion
-C_w = 0.009;
+C_w = 0.0003;
 C_t = 0.003;
 % Maximum people near one table before it becomes full
 max_p = 6;
@@ -42,10 +42,12 @@ person = zeros(N_p,attributes_p);
 
 %Table attributes: position, table-to-people interaction constant, free or
 %not (np=0 means free table, np%%, means that there are %% people at the
-%table), max_p is the maximum people can sit at the table, min_d is the
-%minimum distance at which people can stay from the table
-attributes_t = 6; %[x y C_t np max_p min_d]
+%table)
+attributes_t = 3; %[x y np]
 table = zeros(N_t,attributes_t);
+
+%Table repulsion constant, minimum distance from person-table,maximum people at a table
+table_const = [C_t min_dist_table max_p];
 
 %Food attributes: position
 attributes_f = 2; %[x y]
@@ -74,12 +76,7 @@ food = [3.5 0.2; 6 0.2];
 %Tables location
 [table_x , table_y] = tablePositions(tableShape,N_t);
 table(:,1:2) = [table_x table_y];
-%Table repulsion constant, maximum people at a table, minimum distance from
-% person-table
-table(:,3) = C_t;
-table(:,5) = max_p;
-table(:,6) = min_dist_table;
-%At first, all the tables are free
+
 %The wall position is defined in the "wall_Emile script"
 
 % Force field determined by the walls
@@ -118,7 +115,7 @@ for t=dt:dt:final_time
         [fx_objective , fy_objective] = person_objective_force(person(i,:),v0,table,food);
         person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
         
-        [fx_table, fy_table] = person_tables_force(person(i,:),table,food);
+        [fx_table, fy_table] = person_tables_force(person(i,:),table,food,table_const);
         person(i,5:6) = person(i,5:6) + [fx_table fy_table];
         
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
@@ -204,7 +201,7 @@ d = person(:,10) + (dist_person_obj<=min_dist_obj);
 
 end
 
-function [fx_table, fy_table] = person_tables_force(person,table,food)
+function [fx_table, fy_table] = person_tables_force(person,table,food,table_const)
 %This functions calculates the repulsion force of the table 
 
 % Number of tables
@@ -218,15 +215,17 @@ if person(10)==1
     table = table(1:N_t~=nearest_objective,:);
 end
 
-fx_table = sum(table(:,3).*(person(1)-table(:,1))./((table(:,1)-person(1)).^2 + (table(:,2)-person(2)).^2).^3/2);  
-fy_table = sum(table(:,3).*(person(2)-table(:,2))./((table(:,1)-person(1)).^2 + (table(:,2)-person(2)).^2).^3/2);  
+dist_people_table = sqrt( (person(1)-table(:,1)).^2 + (person(2)-table(:,2)).^2);
+fx_table = sum(table_const(1).*(person(1)-table(:,1))./(dist_people_table.^(4/2)));
+fy_table = sum(table_const(1).*(person(2)-table(:,2))./(dist_people_table.^(4/2)));
+
 end
 
 function [x_obj, y_obj] = objective_direction(person,food,table)
 %For now, the direction of the objective is simply the direction towards the nearest food
 % (or nearest table, according to people's d, the objective).
 %Neglecting the full table
-table = table(table(:,4)==0,:);
+table = table(table(:,3)==0,:);
 
 N_t = size(table(:,1),1);
 N_f = size(food(:,1),1);
@@ -263,22 +262,28 @@ y_obj(person(:,10)==1) = table(nearest_table,2);
 %We prefer colunm vertors
 x_obj = reshape(x_obj,[],1); y_obj = reshape(y_obj,[],1);
 
-%{
-n_table = zeros(size(person(:,11)));
-n_table(person(:,10)==1) = nearest_table;
-% Unit vectors pointing towards the nearest food
-dx_food = (food(nearest_food,1)-person_food(:,1))./min(dist_food_person')';
-dy_food = (food(nearest_food,2)-person_food(:,2))./min(dist_food_person')';
-% Unit vectors pointing towards the nearest table
-dx_table = (table(nearest_table,1)-person_table(:,1))./min(dist_table_person')';
-dy_table = (table(nearest_table,2)-person_table(:,2))./min(dist_table_person')';
-%disp('person(:,10)==0 means food, person(:,10)==1 means table')
-dx(person(:,10)==0) = dx_food;
-dx(person(:,10)==1) = dx_table;
-dy(person(:,10)==0) = dy_food;
-dy(person(:,10)==1) = dy_table;
-dx = reshape(dx,[],1); dy = reshape(dy,[],1);
-%}
+
+
+%If a person is situated in one of the top corner, the the destination is
+%splitted into a polygonal line going to the corner, then to food
+corner = [2.5 7; 7 7];
+
+%If you are in the bad corner of the room but you can see the second food,
+%move towards it.
+x_obj((person(:,2)>=corner(1,2) & person(:,2)<food(1,2)+(person(:,1)-food(1,1)).*(corner(1,2)-food(1,2))/(corner(1,1)-food(1,1)) & person(:,2)>=food(2,2)+(person(:,1)-food(2,1)).*(corner(1,2)-food(2,2))/(corner(1,1)-food(2,1)))) = food(2,1);
+y_obj((person(:,2)>=corner(1,2) & person(:,2)<food(1,2)+(person(:,1)-food(1,1)).*(corner(1,2)-food(1,2))/(corner(1,1)-food(1,1)) & person(:,2)>=food(2,2)+(person(:,1)-food(2,1)).*(corner(1,2)-food(2,2))/(corner(1,1)-food(2,1)))) = food(2,2);
+x_obj((person(:,2)>=corner(2,2) & person(:,2)<food(2,2)+(person(:,1)-food(2,1)).*(corner(2,2)-food(2,2))/(corner(2,1)-food(2,1)) & person(:,2)>=food(1,2)+(person(:,1)-food(1,1)).*(corner(2,2)-food(1,2))/(corner(2,1)-food(1,1)))) = food(1,1);
+y_obj((person(:,2)>=corner(2,2) & person(:,2)<food(2,2)+(person(:,1)-food(2,1)).*(corner(2,2)-food(2,2))/(corner(2,1)-food(2,1)) & person(:,2)>=food(1,2)+(person(:,1)-food(1,1)).*(corner(2,2)-food(1,2))/(corner(2,1)-food(1,1)))) = food(1,2);
+
+%If you cannot see nono of the food points, go towards the corner of the
+%room in order to minimize the the path
+x_obj((person(:,2)>=corner(1,2) & person(:,2)<food(2,2)+(person(:,1)-food(2,1)).*(corner(1,2)-food(2,2))/(corner(1,1)-food(2,1)))) = corner(1,1);
+y_obj((person(:,2)>=corner(1,2) & person(:,2)<food(2,2)+(person(:,1)-food(2,1)).*(corner(1,2)-food(2,2))/(corner(1,1)-food(2,1)))) = corner(1,2);
+x_obj((person(:,2)>=corner(2,2) & person(:,2)<food(1,2)+(person(:,1)-food(1,1)).*(corner(2,2)-food(1,2))/(corner(2,1)-food(1,1)))) = corner(2,1);
+y_obj((person(:,2)>=corner(2,2) & person(:,2)<food(1,2)+(person(:,1)-food(1,1)).*(corner(2,2)-food(1,2))/(corner(2,1)-food(1,1)))) = corner(2,2);
+
+
+
 end
 
 function [fx, fy] = person_objective_force(person,v0,table,food)
