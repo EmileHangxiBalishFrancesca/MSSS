@@ -4,18 +4,19 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 4;   % number of people
-N_t = 6;  % number of table
+N_p = 10;   % number of people
+tableShape = 1; % 1 for circle 2 for rectangular
+N_t = 10;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
 
 % Desired velocity
-v0 = 0.3;
+v0 = 0.2;
 % Limit velocity
 v_lim = 2*v0;
 
 % Wall and tables constant repulsion
-C_w = 0.0003;
-C_t = 0.001;
+C_w = 0.009;
+C_t = 0.003;
 % Maximum people near one table before it becomes full
 max_p = 6;
 % Distance at which people stay from the table centre
@@ -25,8 +26,13 @@ min_dist_table = 0.3;
 min_dist_obj = 0.1;
 % Person-person repulsion constants
 % Repulsion potential constants 
-A = 1; % Taken same as the paper
-B = 0.2; % same as paper
+A = 5; % Taken same as the paper
+B = 0.3; % same as paper
+
+sightAngle = pi/30; % forces coming from people out of +- 60degree will be weaker
+sightCoef = 0.3;
+
+
 
 %People's attributes: position, velocity, undergoing force,
 %velocity relaxation time, destination position, type of
@@ -56,7 +62,7 @@ y_map = linspace(0,10,200);
 
 % Initialization of the attributes of people, food, table and map
 %People's initial position
-min_distance = abs(X_map(1,1)-X_map(1,2))*100/N_p; % Minimum initial distance among people
+min_distance = abs(X_map(1,1)-X_map(1,2))*10/N_p; % Minimum initial distance among people
 [person(:,1), person(:,2)] = people_initial_position(person,X_map,Y_map,min_distance);
 %People's initial velocity
 %????
@@ -66,7 +72,8 @@ person(:,7) = 0.5*rand(size(person(:,7)))+1;
 %Food location
 food = [3.5 0.2; 6 0.2];
 %Tables location
-table(:,1:2) = [3.5 2; 3.5 4; 3.5 6; 6 2; 6 4; 6 6;];
+[table_x , table_y] = tablePositions(tableShape,N_t);
+table(:,1:2) = [table_x table_y];
 %Table repulsion constant, maximum people at a table, minimum distance from
 % person-table
 table(:,3) = C_t;
@@ -114,7 +121,7 @@ for t=dt:dt:final_time
         [fx_table, fy_table] = person_tables_force(person(i,:),table,food);
         person(i,5:6) = person(i,5:6) + [fx_table fy_table];
         
-        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B);
+        [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
     end
@@ -129,7 +136,45 @@ for t=dt:dt:final_time
     
 end
 
+function [x , y] = tablePositions(tableShape,N_t)
 
+x = zeros(N_t,1);
+y = zeros(N_t,1);
+
+if(tableShape == 1) % if in circular shape
+    
+    for i = 1:1:N_t
+        
+        x(i) = 4.75 + 1.5*cos(2*pi/N_t * (i-1));
+        y(i) = 4 + 1.5*sin(2*pi/N_t * (i-1));
+           
+    end
+    
+
+
+elseif(tableShape ==2) % if it is rectangular
+    
+    x(1) = 4; x(2) = 4; x(3) = 6; x(4) = 6;
+    y(1) = 6; y(2) = 2; y(3) = 2; y(4) = 6;
+    
+    for i = 1:1:(N_t-4)/2
+       
+        x(4+i) = 4;
+        y(4+i) = 2 + 4/( (N_t-4)/2 + 1 )*i;
+        
+    end
+    
+    for i = 1:1:(N_t-4)/2
+       
+        x(N_t/2 + 2 + i) = 6;
+        y(N_t/2 + 2 + i) = 2 + 4/( (N_t-4)/2 + 1 )*i;
+        
+    end
+   
+    
+end    
+
+end
 
 function [x, y, vx, vy, d] = updating_objective(person,food,table,min_dist_obj,min_dist_table)
 N_t = size(table,1);
@@ -221,14 +266,12 @@ x_obj = reshape(x_obj,[],1); y_obj = reshape(y_obj,[],1);
 %{
 n_table = zeros(size(person(:,11)));
 n_table(person(:,10)==1) = nearest_table;
-
 % Unit vectors pointing towards the nearest food
 dx_food = (food(nearest_food,1)-person_food(:,1))./min(dist_food_person')';
 dy_food = (food(nearest_food,2)-person_food(:,2))./min(dist_food_person')';
 % Unit vectors pointing towards the nearest table
 dx_table = (table(nearest_table,1)-person_table(:,1))./min(dist_table_person')';
 dy_table = (table(nearest_table,2)-person_table(:,2))./min(dist_table_person')';
-
 %disp('person(:,10)==0 means food, person(:,10)==1 means table')
 dx(person(:,10)==0) = dx_food;
 dx(person(:,10)==1) = dx_table;
@@ -283,8 +326,8 @@ fx = (v0*dx-person(3))/T_relaxation;
 fy = (v0*dy-person(4))/T_relaxation;
 end
 
-function [fx, fy] = person_people_force(person, people,dt,A,B)
-%This function is to calculate the force caused by person B to person A
+function [fx, fy] = person_people_force(person, people,dt,A,B,sightAngle,sightCoef)
+%This function is to calculate the force caused by all other people to person A
 %Following is the distance between two people, every element represents the
 %distance between the person and the other people
 
@@ -306,8 +349,31 @@ f_part3x = (dist_person_people_x ./ dist_person_people) + ( (dist_person_people_
 f_part3y = (dist_person_people_y ./ dist_person_people) + ( (dist_person_people_y - y_y) ./ sqrt( (dist_person_people_x - y_x).^2 + (dist_person_people_y - y_y).^2 ) );
 
 % arranging the force componenets. such that it has the direction of the distance between people
-fx = sum(f_part1 .* f_part2 * 0.5 .* f_part3x);
-fy = sum(f_part1 .* f_part2 * 0.5 .* f_part3y);
+
+
+coef = double(abs(person_people_angle(person,people)) < sightAngle);
+   
+coef(coef == 0) = sightCoef; % if it is out of sight, coef becomes sight coef
+ 
+fx = coef.*(f_part1 .* f_part2 * 0.5 .* f_part3x); % array that shows the force from other people
+fy = coef.*(f_part1 .* f_part2 * 0.5 .* f_part3y);
+
+fx = sum(fx); % sum of those forces
+fy = sum(fy);
+
+end
+
+function gama = person_people_angle(person,people)
+
+% This function is to calculate the angles between person and all other people
+
+velocityAngle = atan2(person(4) , person(3));
+
+gamaInertial = atan2(people(:,2) - person(2)*ones(size(people,1),1) , people(:,1) - person(1)*ones(size(people,1),1)  ); % angle between person and other poeple in inertail fram
+
+gama = gamaInertial - velocityAngle;
+
+
 
 end
 
