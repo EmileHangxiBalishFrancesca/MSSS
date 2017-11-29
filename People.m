@@ -29,8 +29,8 @@ A = 1; % Taken same as the paper
 B = 0.2; % same as paper
 
 %People's attributes: position, velocity, undergoing force,
-%velocity relaxation time, destination direction, type of
-%destination (food=0, table=1)
+%velocity relaxation time, destination position, type of
+%destination (food=0, table=1, reached the table = 2)
 attributes_p = 10; %[x y vx vy fx fy T_p obj_x obj_y d]
 person = zeros(N_p,attributes_p);
 
@@ -122,7 +122,8 @@ for t=dt:dt:final_time
     % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
     [x_upt , y_upt , vx_upt , vy_upt] = update_position_velocity(person, dt,v_lim); % dummy variables
     person(:, 1:4) = [x_upt y_upt vx_upt vy_upt];
-    [person(:, 10)] = updating_objective(person,food,table,min_dist_obj,min_dist_table);
+    [x_upt , y_upt , vx_upt , vy_upt, d_upt] = updating_objective(person,food,table,min_dist_obj,min_dist_table);
+    person(:,[1:4 10]) = [x_upt , y_upt , vx_upt , vy_upt, d_upt];
     
     pause(0.1)
     
@@ -130,7 +131,7 @@ end
 
 
 
-function d = updating_objective(person,food,table,min_dist_obj,min_dist_table)
+function [x, y, vx, vy, d] = updating_objective(person,food,table,min_dist_obj,min_dist_table)
 N_t = size(table,1);
 N_f = size(food,1);
 N_p = size(person,1);
@@ -141,10 +142,20 @@ N_p = size(person,1);
 dist_person_obj = ((person(:,1)-person(:,8)).^2+(person(:,2)-person(:,9)).^2).^(1/2);
 min_dist_obj = repelem(min_dist_obj,N_p,1) + (person(:,10)==1).*min_dist_table;
 
+v_tot = (person(:,3).^2+person(:,4).^2).^(1/2);
+%If the person has reached the objective and is too near to it, he/she is
+%shift to the min_dist from the objective
+
+x = (dist_person_obj>min_dist_obj).*person(:,1)+(dist_person_obj<=min_dist_obj).*(person(:,8)-min_dist_obj.*person(:,3)./v_tot);
+y = (dist_person_obj>min_dist_obj).*person(:,2)+(dist_person_obj<=min_dist_obj).*(person(:,9)-min_dist_obj.*person(:,4)./v_tot);
+
+%If the person has reached the objective, he/she stops.
+vx = (dist_person_obj>min_dist_obj).*person(:,3);
+vy = (dist_person_obj>min_dist_obj).*person(:,4);
+
 %If the person is too close to the food (d=0), the objective becomes the
 %table (d = d+1 = 1)
 d = person(:,10) + (dist_person_obj<=min_dist_obj);
-
 
 end
 
