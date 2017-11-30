@@ -85,7 +85,13 @@ coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 %Defining the time steps
 dt = 0.4;
-final_time = 50;
+final_time = 200;
+% defining cost variables
+s=0;
+cost_v_tot=zeros(final_time/dt,N_p); %total cost velocity
+cost_t1_tot=zeros(1,N_p); %total cost time to reach food
+cost_t2_tot=zeros(1,N_p); %total cost time to reach tables
+timerVal=tic %defining starting time (?)
 
 %MAIN LOOP:
 for t=dt:dt:final_time
@@ -121,6 +127,10 @@ for t=dt:dt:final_time
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
+        [cost_t1,cost_t2] = cost_function_t1(i,timerVal,person,cost_t1_tot,cost_t2_tot,t);
+         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
+         cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
+         
     end
     % Calculation of the position and velocity
     % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
@@ -129,9 +139,15 @@ for t=dt:dt:final_time
     [x_upt , y_upt , vx_upt , vy_upt, d_upt] = updating_objective(person,food,table,min_dist_obj,min_dist_table);
     person(:,[1:4 10]) = [x_upt , y_upt , vx_upt , vy_upt, d_upt];
     
+    [cost_v] = cost_function_v(vx_upt,vy_upt,v_lim,N_p);
+    s=s+1;
+    cost_v_tot(s,:)=cost_v; 
+    cost_v_mean=sum(cost_v_tot)./sum(cost_v_tot~=0); %calculating ccost of velocity for every person
+    
     pause(0.1)
     
 end
+cost_total=sum(cost_v_mean+cost_t1_tot+cost_t2_tot); %calculating total cost
 
 function [x , y] = tablePositions(tableShape,N_t)
 
@@ -560,5 +576,52 @@ nearest_objective_table = (repelem(person_table(:,8),1,N_t) == repelem(table(:,1
 
 nearest_objective(person(:,10)==0) = nearest_objective_food;
 nearest_objective(person(:,10)==1) = nearest_objective_table;
+
+end
+
+%the next two functions are cost functions. The cost of each different
+%combination of parameters can be determined by considering 3 things: the
+%velocity of each person, the time required to reach the food table and the
+%time required to find an empty table.
+function [cost_v] = cost_function_v(vx_upt,vy_upt,v_lim,N_p)
+%function to calculate the cost considering the velocity of each person. 
+% The cost for a general velocity is set to be proportional to 1/v ( as used often in
+% literature). When the velocity of a person is equal to v_lim then the
+% cost is equal to 0. The function returns an array of values with the cost
+% of every person considering the velocity for every dt.
+v=sqrt(vx_upt.^2+vy_upt.^2); 
+cost_v=3*(1./v);
+for p=1:1:N_p
+    if v(p)==v_lim
+        cost_v(p)=0;
+    end
+    if v(p)==0
+        cost_v(p)=1/0.1;
+    end
+end
+   
+end
+
+function [cost_t1,cost_t2] = cost_function_t1(i, timerVal,person,cost_t1_tot,cost_t2_tot,t)
+% function to calculate the cost considering the time to reach the
+% objectives of every person.One fist cost consideres the time to reach the
+% food table and the cost is equal to the time to reach it. The second cost
+% considers the time to find and reach an empty table. 
+if person(i,10)==1 && cost_t1_tot(1,i)==0
+    %time1(i)=t; calculate time like this or tic toc?
+    elapsedTime=toc(timerVal);
+    cost_t1(1,i)=elapsedTime; 
+else 
+    cost_t1(1,i)=0;
+end
+
+if person(i,10)==2 && cost_t2_tot(1,i)==0
+    %time2(i)=t-time1(i)
+    elapsedTime2=toc(timerVal); 
+    cost_t2(1,i)=elapsedTime2-cost_t1(1,i);
+else
+    cost_t2(1,i)=0;
+   
+end 
 
 end
