@@ -4,7 +4,7 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 10;   % number of people
+N_p = 4;   % number of people
 tableShape = 1; % 1 for circle 2 for rectangular
 N_t = 10;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
@@ -85,13 +85,12 @@ coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 %Defining the time steps
 dt = 0.4;
-final_time = 200;
+final_time = 50;
 % defining cost variables
 s=0;
 cost_v_tot=zeros(final_time/dt,N_p); %total cost velocity
 cost_t1_tot=zeros(1,N_p); %total cost time to reach food
 cost_t2_tot=zeros(1,N_p); %total cost time to reach tables
-timerVal=tic %defining starting time (?)
 
 %MAIN LOOP:
 for t=dt:dt:final_time
@@ -127,10 +126,12 @@ for t=dt:dt:final_time
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
-        [cost_t1,cost_t2] = cost_function_t1(i,timerVal,person,cost_t1_tot,cost_t2_tot,t);
-         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
-         cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
-         
+        [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t);
+        cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
+        cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
+        if cost_t2_tot(1,i)~=0 && cost_t2_tot(1,i)>cost_t1_tot(1,i)
+            cost_t2_tot(1,i)=cost_t2_tot(1,i)-cost_t1_tot(1,i);
+        end
     end
     % Calculation of the position and velocity
     % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
@@ -599,29 +600,25 @@ for p=1:1:N_p
         cost_v(p)=1/0.1;
     end
 end
-   
 end
 
-function [cost_t1,cost_t2] = cost_function_t1(i, timerVal,person,cost_t1_tot,cost_t2_tot,t)
+function [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t)
 % function to calculate the cost considering the time to reach the
 % objectives of every person.One fist cost consideres the time to reach the
 % food table and the cost is equal to the time to reach it. The second cost
 % considers the time to find and reach an empty table. 
 if person(i,10)==1 && cost_t1_tot(1,i)==0
-    %time1(i)=t; calculate time like this or tic toc?
-    elapsedTime=toc(timerVal);
-    cost_t1(1,i)=elapsedTime; 
+    time1(i)=t; 
+    cost_t1(1,i)=t;
 else 
     cost_t1(1,i)=0;
 end
 
 if person(i,10)==2 && cost_t2_tot(1,i)==0
-    %time2(i)=t-time1(i)
-    elapsedTime2=toc(timerVal); 
-    cost_t2(1,i)=elapsedTime2-cost_t1(1,i);
+    time2(i)=t;
+    cost_t2(1,i)=t;
 else
     cost_t2(1,i)=0;
    
 end 
-
 end
