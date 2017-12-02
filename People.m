@@ -129,7 +129,7 @@ for t=dt:dt:final_time
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
         if (person(i,10)==2)
-            person(i,5:6) = 0.00001*rand(size(person(i,5:6)));
+            person(i,5:6) = 0.001*rand(size(person(i,5:6)));
         end
         
         [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t);
@@ -235,6 +235,7 @@ vy = (dist_person_obj>min_dist_obj).*person(:,4);
 %If the person is too close to the food (d=0), the objective becomes the
 %table (d = d+1 = 1)
 d = person(:,10) + (dist_person_obj<=min_dist_obj);
+d = d - (d>=2).*(dist_person_obj>min_dist_obj);
 
 end
 
