@@ -90,6 +90,7 @@ final_time = 100;
 % defining cost variables
 s=0;
 cost_v_tot=zeros(final_time/dt,N_p); %total cost velocity
+cost_f_tot=zeros(final_time/dt,N_p); %total cost forces
 cost_t1_tot=zeros(1,N_p); %total cost time to reach food
 cost_t2_tot=zeros(1,N_p); %total cost time to reach tables
 
@@ -145,15 +146,29 @@ for t=dt:dt:final_time
     [x_upt , y_upt , vx_upt , vy_upt, d_upt] = updating_objective(person,food,table,min_dist_obj,min_dist_table);
     person(:,[1:4 10]) = [x_upt , y_upt , vx_upt , vy_upt, d_upt];
     
-    [cost_v] = cost_function_v(vx_upt,vy_upt,v_lim,N_p);
+    
+    [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p);
     s=s+1;
     cost_v_tot(s,:)=cost_v; 
-    cost_v_mean=sum(cost_v_tot)./sum(cost_v_tot~=0); %calculating ccost of velocity for every person
+    cost_f_tot(s,:)=cost_f;
     
     pause(0.1)
-    
 end
-cost_total=sum(cost_v_mean+cost_t1_tot+cost_t2_tot); %calculating total cost
+
+cost_v_mean=sum(cost_v_tot)./sum(cost_v_tot~=0); %calculating cost of velocity for every person
+cost_f_mean=sum(cost_f_tot)./sum(cost_v_tot~=0); %calculating cost of force for every person
+cost_v_mean_max=max(cost_v_mean); %calculating max of velocity
+cost_f_mean_max=max(cost_f_mean); %calculating max of force
+cost_t1_tot_max=max(cost_t1_tot); %calculating max of cost to reach food table
+cost_t2_tot_max=max(cost_t2_tot); %calculating max of cost to reach tables
+%normalizing values in base 10
+for i=1:N_p 
+    cost_v_mean(i)=(cost_v_mean(i).*10)./(cost_v_mean_max);
+    cost_f_mean(i)=(cost_f_mean(i).*10)./(cost_f_mean_max);
+    cost_t1_tot(i)=(cost_t1_tot(i).*10)./(cost_t1_tot_max);
+    cost_t2_tot(i)=(cost_t2_tot(i).*10)./(cost_t2_tot_max);
+end
+cost_total=round(sum(mean(cost_v_mean)+mean(cost_f_mean)+mean(cost_t1_tot)+mean(cost_t2_tot)),2); %calculating total cost
 
 function [x , y] = tablePositions(tableShape,N_t)
 
@@ -602,17 +617,19 @@ nearest_objective(person(:,10)==1) = nearest_objective_table;
 end
 
 %the next two functions are cost functions. The cost of each different
-%combination of parameters can be determined by considering 3 things: the
-%velocity of each person, the time required to reach the food table and the
+%combination of parameters can be determined by considering 4 things: the
+%velocity of each person,the force applied to each person, the time required to reach the food table and the
 %time required to find an empty table.
-function [cost_v] = cost_function_v(vx_upt,vy_upt,v_lim,N_p)
-%function to calculate the cost considering the velocity of each person. 
+function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p)
+%function to calculate the cost considering the velocity of each person and the force 
+% applied to each person. 
 % The cost for a general velocity is set to be proportional to 1/v ( as used often in
 % literature). When the velocity of a person is equal to v_lim then the
 % cost is equal to 0. The function returns an array of values with the cost
-% of every person considering the velocity for every dt.
-v=sqrt(vx_upt.^2+vy_upt.^2); 
-cost_v=3*(1./v);
+% of every person considering the velocity for every dt and an array of
+% values of every person considering the force applied every dt.
+v=sqrt(vx_upt.^2+vy_upt.^2); %velocity
+cost_v=1./v;
 for p=1:1:N_p
     if v(p)==v_lim
         cost_v(p)=0;
@@ -621,6 +638,8 @@ for p=1:1:N_p
         cost_v(p)=1/0.1;
     end
 end
+f=sqrt((person(:,5)).^2+(person(:,6)).^2); %force
+cost_f=f;
 end
 
 function [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t)
