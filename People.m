@@ -284,7 +284,7 @@ x_obj = reshape(x_obj,[],1); y_obj = reshape(y_obj,[],1);
 
 %If a person is situated in one of the top corner, the the destination is
 %splitted into a polygonal line going to the corner, then to food
-corner = [2.5 7; 7 7];
+corner = [2.5 7; 7.5 7];
 
 %If you are in the bad corner of the room but you can see the second food,
 %move towards it.
