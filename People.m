@@ -73,7 +73,7 @@ min_distance = abs(X_map(1,1)-X_map(1,2))*10/N_p; % Minimum initial distance amo
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
 %Food location
-food = [3.5 0.2; 6 0.2];
+food = [3.5 0.2; 6.5 0.2];
 %Tables location
 [table_x , table_y] = tablePositions(tableShape,N_t);
 table(:,1:2) = [table_x table_y];
