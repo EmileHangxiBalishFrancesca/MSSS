@@ -538,7 +538,8 @@ for i = 1:size(table,1)
     plot((x_around_table+table(i,1)),(y_around_table+table(i,2)),'r');
 end
 %}
-
+dx(person(:,10)==2) = 0;
+dy(person(:,10)==2) = 0;
 quiver(person(:,1),person(:,2),dx,dy,0.4,'r')
 axis([min(min(X_map)) max(max(X_map)) min(min(Y_map)) max(max(Y_map))])
 
