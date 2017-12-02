@@ -102,7 +102,7 @@ for t=dt:dt:final_time
     person(:,8:9) = [x_obj y_obj]; % filling the destionations into the person matrix
     plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy)
     
-    fromPositionToDirections(person,table,food);
+    %fromPositionToDirections(person,table,food);
     
     
     for i = 1:N_p
@@ -126,6 +126,10 @@ for t=dt:dt:final_time
         
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
+        
+        if (person(i,10)==2)
+            person(i,5:6) = 0.00001*rand(size(person(i,5:6)));
+        end
         
         [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t);
         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
@@ -277,8 +281,11 @@ x_obj(person(:,10)==0) = food(nearest_food,1);
 y_obj(person(:,10)==0) = food(nearest_food,2);
 x_obj(person(:,10)==1) = table(nearest_table,1);
 y_obj(person(:,10)==1) = table(nearest_table,2);
+x_obj(person(:,10)==2) = 0;
+y_obj(person(:,10)==2) = 0;
 %We prefer colunm vertors
-x_obj = reshape(x_obj,[],1); y_obj = reshape(y_obj,[],1);
+x_obj = reshape(x_obj,[],1); 
+y_obj = reshape(y_obj,[],1);
 
 
 
