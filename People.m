@@ -4,8 +4,8 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 4;   % number of people
-tableShape = 1; % 1 for circle 2 for rectangular
+N_p = 5;   % number of people
+tableShape = 2; % 1 for circle 2 for rectangular
 N_t = 10;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
 
@@ -16,7 +16,7 @@ v_lim = 2*v0;
 
 % Wall and tables constant repulsion
 C_w = 0.0003;
-C_t = 0.003;
+C_t = 0.03;
 % Maximum people near one table before it becomes full
 max_p = 6;
 % Distance at which people stay from the table centre
@@ -26,12 +26,11 @@ min_dist_table = 0.3;
 min_dist_obj = 0.1;
 % Person-person repulsion constants
 % Repulsion potential constants 
-A = 5; % Taken same as the paper
-B = 0.3; % same as paper
+A = 2; % Taken same as the paper
+B = 0.1; % same as paper
 
 sightAngle = pi/30; % forces coming from people out of +- 60degree will be weaker
 sightCoef = 0.3;
-
 
 
 %People's attributes: position, velocity, undergoing force,
@@ -39,6 +38,9 @@ sightCoef = 0.3;
 %destination (food=0, table=1, reached the table = 2)
 attributes_p = 10; %[x y vx vy fx fy T_p obj_x obj_y d]
 person = zeros(N_p,attributes_p);
+
+% Relaxation time (for person-object interaction)
+person(:,7) = 0.3*rand(size(person(:,7)))+0.5;
 
 %Table attributes: position, table-to-people interaction constant, free or
 %not (np=0 means free table, np%%, means that there are %% people at the
@@ -70,7 +72,6 @@ min_distance = abs(X_map(1,1)-X_map(1,2))*10/N_p; % Minimum initial distance amo
 %????
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
-person(:,7) = 0.5*rand(size(person(:,7)))+1;
 %Food location
 food = [3.5 0.2; 6 0.2];
 %Tables location
@@ -85,7 +86,7 @@ coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
 %Defining the time steps
 dt = 0.4;
-final_time = 50;
+final_time = 100;
 % defining cost variables
 s=0;
 cost_v_tot=zeros(final_time/dt,N_p); %total cost velocity
