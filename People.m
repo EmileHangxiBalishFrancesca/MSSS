@@ -20,7 +20,7 @@ C_t = 0.03;
 % Maximum people near one table before it becomes full
 max_p = 6;
 % Distance at which people stay from the table centre
-min_dist_table = 0.3;
+min_dist_table = 0.2;
 % Distance at which people stay from the objective (table border of food
 % point)
 min_dist_obj = 0.1;
@@ -100,7 +100,7 @@ for t=dt:dt:final_time
     
     [x_obj, y_obj] = objective_direction(person,food,table);
     person(:,8:9) = [x_obj y_obj]; % filling the destionations into the person matrix
-    plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy)
+    plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy,min_dist_table)
     
     fromPositionToDirections(person,table,food);
     
@@ -518,15 +518,27 @@ quiver(X_map(1:3:end,1:3:end),Y_map(1:3:end,1:3:end),fx(1:3:end,1:3:end),fy(1:3:
 hold off
 end
 
-function plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy)
+function plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy,min_dist_table)
 
 [dx, dy] = fromPositionToDirections(person,table,food);
+
+angle = linspace(0,2*pi,20);
+x_around_table = min_dist_table.*cos(angle);
+y_around_table = min_dist_table.*sin(angle);
 
 figure(1)
 coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
 title('Plot of the direction of the moving force (at first it points toward the food)')
 hold on
+
 plot(food(:,1),food(:,2),'r+',table(:,1),table(:,2),'ro',person(:,1),person(:,2),'g*')
+%{
+plot(food(:,1),food(:,2),'r+',person(:,1),person(:,2),'g*')
+for i = 1:size(table,1)
+    plot((x_around_table+table(i,1)),(y_around_table+table(i,2)),'r');
+end
+%}
+
 quiver(person(:,1),person(:,2),dx,dy,0.4,'r')
 axis([min(min(X_map)) max(max(X_map)) min(min(Y_map)) max(max(Y_map))])
 
