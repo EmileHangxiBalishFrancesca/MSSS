@@ -4,13 +4,13 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 12;   % number of people
-tableShape = 2; % 1 for circle 2 for rectangular
-N_t = 6;  % number of table % should be ven if it is rectangular
+N_p = 9;   % number of people
+tableShape = 1; % 1 for circle 2 for rectangular
+N_t = 3;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
 
 % Desired velocity
-v0 = 0.4;
+v0 = 0.2;
 % Limit velocity
 v_lim = 2*v0;
 
@@ -20,7 +20,7 @@ C_t = 0.03;
 % Maximum people near one table before it becomes full
 max_p = 6;
 % Distance at which people stay from the table centre
-min_dist_table = 0.2;
+min_dist_table = 0.3;
 % Distance at which people stay from the objective (table border of food
 % point)
 min_dist_obj = 0.1;
@@ -74,7 +74,7 @@ min_distance = abs(X_map(1,1)-X_map(1,2))*10/N_p; % Minimum initial distance amo
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
 %Food location
-food = [3.5 0.2; 6.5 0.2];
+food = [3.5 0.2; 6 0.2];
 %Tables location
 [table_x , table_y] = tablePositions(tableShape,N_t);
 table(:,1:2) = [table_x table_y];
@@ -129,7 +129,7 @@ for t=dt:dt:final_time
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
         
-        if (person(i,10)==2)
+        if (person(i,10)>100)
             person(i,5:6) = 0.001*rand(size(person(i,5:6)));
         end
         
@@ -220,7 +220,7 @@ N_p = size(person,1);
 %and the objective is changed (from d=0 food to d=1 table or d=???? table
 %reached)
 dist_person_obj = ((person(:,1)-person(:,8)).^2+(person(:,2)-person(:,9)).^2).^(1/2);
-min_dist_obj = repelem(min_dist_obj,N_p,1) + (person(:,10)==1).*min_dist_table;
+min_dist_obj = repelem(min_dist_obj,N_p,1) + (person(:,10)~=0).*min_dist_table;
 
 v_tot = (person(:,3).^2+person(:,4).^2).^(1/2);
 %If the person has reached the objective and is too near to it, he/she is
@@ -236,7 +236,10 @@ vy = (dist_person_obj>min_dist_obj).*person(:,4);
 %If the person is too close to the food (d=0), the objective becomes the
 %table (d = d+1 = 1)
 
-d = person(:,10) + (dist_person_obj<=min_dist_obj)*100; % becomes 1 when the food is taken
+d = person(:,10) + (dist_person_obj<=min_dist_obj & (person(:,10) == 0))*100; % becomes 100 when the food is first taken and then it will be the table number
+
+%d = (dist_person_obj<=min_dist_obj & (person(:,10) == 0))*sth % write
+%what you want d to be after people reach
 
 end
 
@@ -250,7 +253,7 @@ N_t = size(table,1);
 % already taken the food.
 
 [dx, dy, nearest_objective] = fromPositionToDirections(person,table,food);
-if person(10)==1
+if person(10)~=0
     table = table(1:N_t~=nearest_objective,:);
 end
 
@@ -306,7 +309,7 @@ for i = 1:1:size(table_person_indices,1) % iterating through table_people
         
         person(table_person_indices(i),10) = sortedTableIndex(i,j);
         
-        break
+        break;
     end
     
     end
@@ -316,11 +319,14 @@ end
 x_obj(person(:,10)==0) = food(nearest_food,1);
 y_obj(person(:,10)==0) = food(nearest_food,2);
 
-x_obj(person(:,10)~=0) = table(person(table_person_indices,10),1);
-y_obj(person(:,10)~=0) = table(person(table_person_indices,10),2);
+x_obj(person(:,10)~=0 ) = table(person(table_person_indices,10),1);
+y_obj(person(:,10)~=0 ) = table(person(table_person_indices,10),2);
 
-x_obj(person(:,10)>100) = 0;
-y_obj(person(:,10)>100) = 0;
+% what happens
+% x_obj(person(:,10)==condition that table is reached) = objective after table is reahed ??;
+% y_obj(person(:,10)==condition that table is reached) = objective after table is reahed ??;
+
+
 %We prefer colunm vertors
 x_obj = reshape(x_obj,[],1); 
 y_obj = reshape(y_obj,[],1);
@@ -329,7 +335,7 @@ y_obj = reshape(y_obj,[],1);
 
 %If a person is situated in one of the top corner, the the destination is
 %splitted into a polygonal line going to the corner, then to food
-corner = [2.5 7; 7.5 7];
+corner = [2.5 7; 7 7];
 
 %If you are in the bad corner of the room but you can see the second food,
 %move towards it.
@@ -441,7 +447,6 @@ velocityAngle = atan2(person(4) , person(3));
 gamaInertial = atan2(people(:,2) - person(2)*ones(size(people,1),1) , people(:,1) - person(1)*ones(size(people,1),1)  ); % angle between person and other poeple in inertail fram
 
 gama = gamaInertial - velocityAngle;
-
 
 
 end
@@ -584,8 +589,9 @@ for i = 1:size(table,1)
     plot((x_around_table+table(i,1)),(y_around_table+table(i,2)),'r');
 end
 %}
-dx(person(:,10)==2) = 0;
-dy(person(:,10)==2) = 0;
+
+%dx(person(:,10)==condition for people reach table) = 0;
+%dy(person(:,10)==condition for people reach table) = 0;
 quiver(person(:,1),person(:,2),dx,dy,0.4,'r')
 axis([min(min(X_map)) max(max(X_map)) min(min(Y_map)) max(max(Y_map))])
 
@@ -623,7 +629,7 @@ dy = dist_person_objective_y./tot_dist_person_objective;
 
 %Dividing the people into the ones looking for food or tables
 person_food = person(person(:,10)==0,:);
-person_table = person(person(:,10)==1,:);
+person_table = person(person(:,10)~=0,:);
 
 N_t = size(table,1);
 N_f = size(food,1);
@@ -636,7 +642,7 @@ nearest_objective_food = (repelem(person_food(:,8),1,N_f) == repelem(food(:,1)',
 nearest_objective_table = (repelem(person_table(:,8),1,N_t) == repelem(table(:,1)',N_p_table,1) & repelem(person_table(:,9),1,N_t) == repelem(table(:,2)',N_p_table,1))*(1:N_t)';
 
 nearest_objective(person(:,10)==0) = nearest_objective_food;
-nearest_objective(person(:,10)==1) = nearest_objective_table;
+nearest_objective(person(:,10)~=0) = nearest_objective_table;
 
 end
 
