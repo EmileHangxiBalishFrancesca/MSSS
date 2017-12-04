@@ -4,13 +4,13 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 5;   % number of people
+N_p = 12;   % number of people
 tableShape = 2; % 1 for circle 2 for rectangular
-N_t = 10;  % number of table % should be ven if it is rectangular
+N_t = 6;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
 
 % Desired velocity
-v0 = 0.2;
+v0 = 0.4;
 % Limit velocity
 v_lim = 2*v0;
 
@@ -32,6 +32,7 @@ B = 0.1; % same as paper
 sightAngle = pi/30; % forces coming from people out of +- 60degree will be weaker
 sightCoef = 0.3;
 
+tableCapacity = 3; % capacity of 1 table can handle
 
 %People's attributes: position, velocity, undergoing force,
 %velocity relaxation time, destination position, type of
@@ -99,7 +100,7 @@ for t=dt:dt:final_time
     % Initializing the forces to zero
     person(:,5:6) = zeros(size(person(:,5:6)));
     
-    [x_obj, y_obj] = objective_direction(person,food,table);
+    [x_obj, y_obj , table, person] = objective_direction(person,food,table,tableCapacity);
     person(:,8:9) = [x_obj y_obj]; % filling the destionations into the person matrix
     plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy,min_dist_table)
     
@@ -234,8 +235,8 @@ vy = (dist_person_obj>min_dist_obj).*person(:,4);
 
 %If the person is too close to the food (d=0), the objective becomes the
 %table (d = d+1 = 1)
-d = person(:,10) + (dist_person_obj<=min_dist_obj);
-d = d - (d>=2).*(dist_person_obj>min_dist_obj);
+
+d = person(:,10) + (dist_person_obj<=min_dist_obj)*100; % becomes 1 when the food is taken
 
 end
 
@@ -259,21 +260,21 @@ fy_table = sum(table_const(1).*(person(2)-table(:,2))./(dist_people_table.^(4/2)
 
 end
 
-function [x_obj, y_obj] = objective_direction(person,food,table)
+function [x_obj, y_obj, table, person] = objective_direction(person,food,table,tableCapacity)
 %For now, the direction of the objective is simply the direction towards the nearest food
 % (or nearest table, according to people's d, the objective).
 %Neglecting the full table
-table = table(table(:,3)==0,:);
+%table = table(table(:,3)==0,:);
 
 N_t = size(table(:,1),1);
 N_f = size(food(:,1),1);
 %Number of people that want to go toward a table of food
 N_p_food = size(person(person(:,10)==0),1);
-N_p_table = size(person(person(:,10)==1),1);
+N_p_table = size(person(person(:,10)~=0),1);
 % Division of the people that want to go toward a table of food into two
 %matrices
 person_food = person(person(:,10)==0,:);
-person_table = person(person(:,10)==1,:);
+person_table = person(person(:,10)~=0,:);
 
 %
 %Every row is a person, every column a food point / table
@@ -288,17 +289,38 @@ dist_table_person(dist_table_person==0) = dist_table_person(dist_table_person==0
 
 
 %Identification of the nearest food point to each person
-nearest_food = (dist_food_person'==min(dist_food_person'))'*(1:N_f)';
-%Identification of the nearest table to each person
-nearest_table = (dist_table_person'==min(dist_table_person'))'*(1:N_t)';
-%Saving the index of the nearest tables to each person
+nearest_food = (dist_food_person'== min(dist_food_person'))'*(1:N_f)';
+%Identification of the objective table to each person
+%nearest_table = (dist_table_person'==min(dist_table_person'))'*(1:N_t)';
+
+[sortedTableDist , sortedTableIndex] = sort(dist_table_person,2);
+
+table_person_indices = find(person(:,10)); % indice number of poeple whose objective is table
+
+for i = 1:1:size(table_person_indices,1) % iterating through table_people
+    for j = 1:1:N_t % iterating through tables
+        
+    if( table( sortedTableIndex(i,j) , 3)  < tableCapacity && person(table_person_indices(i),10) == 100 ) % if closest table is not full
+        
+        table( sortedTableIndex(i,j) , 3) = table( sortedTableIndex(i,j) , 3) + 1; % increasing the value indicating how many people on that table
+        
+        person(table_person_indices(i),10) = sortedTableIndex(i,j);
+        
+        break
+    end
+    
+    end
+    
+end
 
 x_obj(person(:,10)==0) = food(nearest_food,1);
 y_obj(person(:,10)==0) = food(nearest_food,2);
-x_obj(person(:,10)==1) = table(nearest_table,1);
-y_obj(person(:,10)==1) = table(nearest_table,2);
-x_obj(person(:,10)==2) = 0;
-y_obj(person(:,10)==2) = 0;
+
+x_obj(person(:,10)~=0) = table(person(table_person_indices,10),1);
+y_obj(person(:,10)~=0) = table(person(table_person_indices,10),2);
+
+x_obj(person(:,10)>100) = 0;
+y_obj(person(:,10)>100) = 0;
 %We prefer colunm vertors
 x_obj = reshape(x_obj,[],1); 
 y_obj = reshape(y_obj,[],1);
@@ -322,6 +344,7 @@ x_obj((person(:,2)>=corner(1,2) & person(:,2)<food(2,2)+(person(:,1)-food(2,1)).
 y_obj((person(:,2)>=corner(1,2) & person(:,2)<food(2,2)+(person(:,1)-food(2,1)).*(corner(1,2)-food(2,2))/(corner(1,1)-food(2,1)))) = corner(1,2);
 x_obj((person(:,2)>=corner(2,2) & person(:,2)<food(1,2)+(person(:,1)-food(1,1)).*(corner(2,2)-food(1,2))/(corner(2,1)-food(1,1)))) = corner(2,1);
 y_obj((person(:,2)>=corner(2,2) & person(:,2)<food(1,2)+(person(:,1)-food(1,1)).*(corner(2,2)-food(1,2))/(corner(2,1)-food(1,1)))) = corner(2,2);
+
 
 
 
