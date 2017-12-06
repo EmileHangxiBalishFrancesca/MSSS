@@ -4,9 +4,9 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 9;   % number of people
-tableShape = 1; % 1 for circle 2 for rectangular
-N_t = 3;  % number of table % should be ven if it is rectangular
+N_p = 30;   % number of people
+tableShape = 2; % 1 for circle 2 for rectangular
+N_t = 6;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
 
 % Desired velocity
@@ -32,7 +32,7 @@ B = 0.1; % same as paper
 sightAngle = pi/30; % forces coming from people out of +- 60degree will be weaker
 sightCoef = 0.3;
 
-tableCapacity = 3; % capacity of 1 table can handle
+tableCapacity = 6; % capacity of 1 table can handle
 
 %People's attributes: position, velocity, undergoing force,
 %velocity relaxation time, destination position, type of
@@ -128,11 +128,7 @@ for t=dt:dt:final_time
         
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
-        
-        if (person(i,10)>100)
-            person(i,5:6) = 0.001*rand(size(person(i,5:6)));
-        end
-        
+                
         [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t);
         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
         cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
