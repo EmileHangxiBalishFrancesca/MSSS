@@ -215,7 +215,9 @@ N_p = size(person,1);
 %too close to the objective, it is stopped, positioned at a safety distance
 %and the objective is changed (from d=0 food to d=1 table or d=???? table
 %reached)
+corner = [2.5 7; 7 7];
 dist_person_obj = ((person(:,1)-person(:,8)).^2+(person(:,2)-person(:,9)).^2).^(1/2);
+dist_person_obj( (person(:,8)==corner(1,1) & person(:,9)==corner(1,2)) | (person(:,8)==corner(2,1) & person(:,9)==corner(2,2)) ) = max(dist_person_obj);
 min_dist_obj = repelem(min_dist_obj,N_p,1) + (person(:,10)~=0).*min_dist_table;
 
 v_tot = (person(:,3).^2+person(:,4).^2).^(1/2);
