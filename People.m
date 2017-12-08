@@ -4,7 +4,7 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 30;   % number of people
+N_p = 10;   % number of people
 tableShape = 2; % 1 for circle 2 for rectangular
 N_t = 6;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
@@ -129,7 +129,7 @@ for t=dt:dt:final_time
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
                 
-        [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t);
+        [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table);
         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
         cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
         if cost_t2_tot(1,i)~=0 && cost_t2_tot(1,i)>cost_t1_tot(1,i)
@@ -165,7 +165,9 @@ for i=1:N_p
     cost_t1_tot(i)=(cost_t1_tot(i).*10)./(cost_t1_tot_max);
     cost_t2_tot(i)=(cost_t2_tot(i).*10)./(cost_t2_tot_max);
 end
-cost_total=round(sum(mean(cost_v_mean)+mean(cost_f_mean)+mean(cost_t1_tot)+mean(cost_t2_tot)),2); %calculating total cost
+cost_total_mean=[mean(cost_v_mean),mean(cost_f_mean),mean(cost_t1_tot),mean(cost_t2_tot)];
+cost_total=round(mean(cost_total_mean),3); %calculating total cost
+
 
 function [x , y] = tablePositions(tableShape,N_t)
 
@@ -670,23 +672,30 @@ f=sqrt((person(:,5)).^2+(person(:,6)).^2); %force
 cost_f=f;
 end
 
-function [cost_t1,cost_t2] = cost_function_t1(i,person,cost_t1_tot,cost_t2_tot,t)
+function [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table)
 % function to calculate the cost considering the time to reach the
 % objectives of every person.One fist cost consideres the time to reach the
 % food table and the cost is equal to the time to reach it. The second cost
 % considers the time to find and reach an empty table. 
-if person(i,10)==1 && cost_t1_tot(1,i)==0
-    time1(i)=t; 
-    cost_t1(1,i)=t;
+if person(i,10)==1 | person(i,10)==2 | person(i,10)==3 | person(i,10)==4 | person(i,10)==5 | person(i,10)==6  && cost_t1_tot(1,i)==0
+    time(i)=t; 
+    cost_t1(1,i)=time(i);
+    
 else 
     cost_t1(1,i)=0;
 end
-
-if person(i,10)==2 && cost_t2_tot(1,i)==0
-    time2(i)=t;
-    cost_t2(1,i)=t;
+if cost_t1_tot(1,i)~=0
+    dist_person_objective_x = person(i,8) - person(i,1);
+    dist_person_objective_y = person(i,9) - person(i,2);
+    tot_dist_person_objective = (dist_person_objective_x.^2+dist_person_objective_y.^2).^(1/2);
+   if (tot_dist_person_objective <= (2*min_dist_table)) && cost_t2_tot(1,i)==0 %what is table radius?? 
+     
+      time2(i)=t;
+      cost_t2(1,i)=time2(i);
+    else
+    cost_t2(1,i)=0;
+   end
 else
     cost_t2(1,i)=0;
-   
-end 
+end
 end
