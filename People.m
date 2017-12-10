@@ -1,18 +1,57 @@
 close all
 clear
 clc
+
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 48;   % number of people
-tableShape = 2; % 1 for circle 2 for rectangular
-N_t = 8;  % number of table % should be ven if it is rectangular
-N_f = 2;   % number of foods
+
+
+% Force field determined by the walls
+[static_fx,static_fy] = readForceFile();
+
+
+%EVERYTHING IS OUTSIDE THE SIMULATION LOOP MUST BE ADDED TO CLEARVARS AT
+%THE END OF THE LOOPS
+N_p_vector = [20:21];   % number of people
+N_t_vector = [6];  % number of table % should be ven if it is rectangular
+tableShape_vector = [1]; % 1 for circle 2 for rectangular
+dist_f_vector = [1]; %distance food-food
+number_statistical_attemps = 3;
+
+%Testing the parameters
+for N_p = N_p_vector %changing the number of people 
+for N_t = N_t_vector %changing table number
+for tableShape = tableShape_vector %changing the table disposition
+for dist_f = dist_f_vector %changing the distance food-food
+
+ 
+for statistical_attemp = 1:number_statistical_attemps
+tic
+
+%For simulations, I don't want to plot anything. 0 for not to plot
+%anything, 1 to see plots.
+do_you_want_to_plot = 1;
+%For simulations, do you want save the workspace with results? 1=yes, 0=no
+do_you_want_to_save_the_workspace = 1;
+
+% Definition of the (x,y) coordinate system (origin on bottom left)
+x_map = linspace(0,10,200);
+y_map = linspace(0,10,200);
+% Building the map
+[X_map,Y_map] = meshgrid(x_map,y_map(end:-1:1));
+
+if do_you_want_to_plot ~= 0
+    coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
+    functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
+end
 
 % Desired velocity
 v0 = 0.3;
 % Limit velocity
 v_lim = 2*v0;
+
+N_f = 2;   % number of foods
 
 % Wall and tables constant repulsion
 C_w = 0.0003;
@@ -56,14 +95,6 @@ table_const = [C_t min_dist_table max_p];
 attributes_f = 2; %[x y]
 food = zeros(N_f,attributes_f);
 
-% Definition of the (x,y) coordinate system (origin on bottom left)
-% EMILE: the map can be change but remember that it is connected to the
-% wall force field. If you change the limits or number of points, you also
-% need to update the force field.
-x_map = linspace(0,10,200);
-y_map = linspace(0,10,200);
-% Building the map
-[X_map,Y_map] = meshgrid(x_map,y_map(end:-1:1));
 
 % Initialization of the attributes of people, food, table and map
 %People's initial position
@@ -74,26 +105,25 @@ min_distance = abs(X_map(1,1)-X_map(1,2))*1/N_p; % Minimum initial distance amon
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
 %Food location
-food = [4.7 1; 4.8 1];
+food = [(5-dist_f/2) 1; (5+dist_f/2) 1];
 %Tables location
 [table_x , table_y] = tablePositions(tableShape,N_t);
 table(:,1:2) = [table_x table_y];
 
 %The wall position is defined in the "wall_Emile script"
 
-% Force field determined by the walls
-[static_fx,static_fy] = readForceFile();
-coloringTheMap(static_fx,static_fy,max(max(X_map))/1000,X_map,Y_map,1)
-functionToPlotTheStaticField(X_map,Y_map,static_fx,static_fy)
-%Defining the time steps
+
 dt = 0.4;
-final_time = 100;
+final_time = 150;
+
+
+
 % defining cost variables
 s=0;
 cost_v_tot=zeros(final_time/dt,N_p); %total cost velocity
 cost_f_tot=zeros(final_time/dt,N_p); %total cost forces
 cost_t1_tot=zeros(1,N_p); %total cost time to reach food
-cost_t2_tot=zeros(1,N_p); %total cost time to reach tables
+cost_t2_tot=zeros(1,N_p); %total cost time to reach table
 
 %MAIN LOOP:
 for t=dt:dt:final_time
@@ -102,9 +132,10 @@ for t=dt:dt:final_time
     
     [x_obj, y_obj , table, person] = objective_direction(person,food,table,tableCapacity);
     person(:,8:9) = [x_obj y_obj]; % filling the destionations into the person matrix
-    plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy,min_dist_table)
     
-    %fromPositionToDirections(person,table,food);
+    if do_you_want_to_plot ~= 0
+        plotting_tables_food_people(food,table,person,X_map,Y_map,static_fx,static_fy,min_dist_table)
+    end
     
     
     for i = 1:N_p
@@ -136,6 +167,8 @@ for t=dt:dt:final_time
             cost_t2_tot(1,i)=cost_t2_tot(1,i)-cost_t1_tot(1,i);
         end
     end
+    
+    
     % Calculation of the position and velocity
     % Previous version give error because when it used as A(l,2:3) = func(), func gives only the first output
     [x_upt , y_upt , vx_upt , vy_upt] = update_position_velocity(person, dt,v_lim); % dummy variables
@@ -149,7 +182,16 @@ for t=dt:dt:final_time
     cost_v_tot(s,:)=cost_v; 
     cost_f_tot(s,:)=cost_f;
     
-    pause(0.1)
+    if do_you_want_to_plot ~= 0
+        pause(0.05)
+    end
+    
+    %If every person has reached the tables, no further calculations are
+    %needed
+    if sum(cost_t2_tot==0)==0
+        t
+        break
+    end
 end
 
 cost_v_mean=sum(cost_v_tot)./sum(cost_v_tot~=0); %calculating cost of velocity for every person
@@ -167,6 +209,50 @@ for i=1:N_p
 end
 cost_total_mean=[mean(cost_v_mean),mean(cost_f_mean),mean(cost_t1_tot),mean(cost_t2_tot)];
 cost_total=round(mean(cost_total_mean),3); %calculating total cost
+
+
+
+cost_total_to_be_averaged(statistical_attemp) = cost_total;
+toc
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_total_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace
+
+end
+
+
+a = (N_p==N_p_vector)*(1:length(N_p_vector))';
+b = (N_t==N_t_vector)*(1:length(N_t_vector))';
+c = (tableShape==tableShape_vector)*(1:length(tableShape_vector))';
+d = (dist_f==dist_f_vector)*(1:length(dist_f_vector))';
+cost_total_matrix(a,b,c,d) = sum(cost_total_to_be_averaged)/length(cost_total_to_be_averaged);
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace
+
+
+end
+end
+end
+end
+
+if do_you_want_to_save_the_workspace~=0
+    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps
+    name_file = 'CHANGING--';
+    if length(N_p_vector)~=1
+        name_file = strcat(name_file,'N_p--');
+    end
+    if length(N_t_vector)~=1
+        name_file = strcat(name_file,'N_t--');
+    end
+    if length(tableShape_vector)~=1
+        name_file = strcat(name_file,'tableShape--');
+    end
+    if length(dist_f_vector)~=1
+        name_file = strcat(name_file,'dist_f--');
+    end
+    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix name_file
+    name_file = strcat(name_file,'TIME_');
+    name_file = strcat(name_file,datestr(datetime));
+    save(name_file);
+end
+
 
 
 function [x , y] = tablePositions(tableShape,N_t)
