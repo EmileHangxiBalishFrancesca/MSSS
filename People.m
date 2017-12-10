@@ -31,7 +31,7 @@ tic
 
 %For simulations, I don't want to plot anything. 0 for not to plot
 %anything, 1 to see plots.
-do_you_want_to_plot = 1;
+do_you_want_to_plot = 0;
 %For simulations, do you want save the workspace with results? 1=yes, 0=no
 do_you_want_to_save_the_workspace = 1;
 
@@ -120,8 +120,8 @@ final_time = 150;
 
 % defining cost variables
 s=0;
-cost_v_tot=zeros(final_time/dt,N_p); %total cost velocity
-cost_f_tot=zeros(final_time/dt,N_p); %total cost forces
+cost_v_mean=zeros(final_time/dt,N_p); %total cost velocity
+cost_f_mean=zeros(final_time/dt,N_p); %total cost forces
 cost_t1_tot=zeros(1,N_p); %total cost time to reach food
 cost_t2_tot=zeros(1,N_p); %total cost time to reach table
 
@@ -177,10 +177,10 @@ for t=dt:dt:final_time
     person(:,[1:4 10]) = [x_upt , y_upt , vx_upt , vy_upt, d_upt];
     
     
-    [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p);
+    [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost_t2_tot);
     s=s+1;
-    cost_v_tot(s,:)=cost_v; 
-    cost_f_tot(s,:)=cost_f;
+    cost_v_mean(s,:)=cost_v; 
+    cost_f_mean(s,:)=cost_f;
     
     if do_you_want_to_plot ~= 0
         pause(0.05)
@@ -193,28 +193,14 @@ for t=dt:dt:final_time
         break
     end
 end
-
-cost_v_mean=sum(cost_v_tot)./sum(cost_v_tot~=0); %calculating cost of velocity for every person
-cost_f_mean=sum(cost_f_tot)./sum(cost_v_tot~=0); %calculating cost of force for every person
-cost_v_mean_max=max(cost_v_mean); %calculating max of velocity
-cost_f_mean_max=max(cost_f_mean); %calculating max of force
-cost_t1_tot_max=max(cost_t1_tot); %calculating max of cost to reach food table
-cost_t2_tot_max=max(cost_t2_tot); %calculating max of cost to reach tables
-%normalizing values in base 10
-for i=1:N_p 
-    cost_v_mean(i)=(cost_v_mean(i).*10)./(cost_v_mean_max);
-    cost_f_mean(i)=(cost_f_mean(i).*10)./(cost_f_mean_max);
-    cost_t1_tot(i)=(cost_t1_tot(i).*10)./(cost_t1_tot_max);
-    cost_t2_tot(i)=(cost_t2_tot(i).*10)./(cost_t2_tot_max);
+cost_v_tot=sum(cost_v_mean)./sum(cost_v_mean~=0); %calculating cost of velocity for every person
+cost_f_tot=sum(cost_f_mean)./sum(cost_v_mean~=0);%calculating cost of force for every person
+cost_time_tot=cost_t1_tot+cost_t2_tot;
 end
-cost_total_mean=[mean(cost_v_mean),mean(cost_f_mean),mean(cost_t1_tot),mean(cost_t2_tot)];
-cost_total=round(mean(cost_total_mean),3); %calculating total cost
 
-
-
-cost_total_to_be_averaged(statistical_attemp) = cost_total;
+% % % %cost_total_to_be_averaged(statistical_attemp) = cost_total;
 toc
-clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_total_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_total_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_time_tot cost_v_tot cost_f_tot
 
 end
 
@@ -223,17 +209,16 @@ a = (N_p==N_p_vector)*(1:length(N_p_vector))';
 b = (N_t==N_t_vector)*(1:length(N_t_vector))';
 c = (tableShape==tableShape_vector)*(1:length(tableShape_vector))';
 d = (dist_f==dist_f_vector)*(1:length(dist_f_vector))';
-cost_total_matrix(a,b,c,d) = sum(cost_total_to_be_averaged)/length(cost_total_to_be_averaged);
-clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace
+% % % %cost_total_matrix(a,b,c,d) = sum(cost_total_to_be_averaged)/length(cost_total_to_be_averaged);
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_time_tot cost_v_tot cost_f_tot
 
 
-end
 end
 end
 end
 
 if do_you_want_to_save_the_workspace~=0
-    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps
+    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_time_tot cost_v_tot cost_f_tot
     name_file = 'CHANGING--';
     if length(N_p_vector)~=1
         name_file = strcat(name_file,'N_p--');
@@ -247,7 +232,7 @@ if do_you_want_to_save_the_workspace~=0
     if length(dist_f_vector)~=1
         name_file = strcat(name_file,'dist_f--');
     end
-    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix name_file
+    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix name_file cost_time_tot cost_v_tot cost_f_tot
     name_file = strcat(name_file,'TIME_');
     name_file = strcat(name_file,datestr(datetime));
     save(name_file);
@@ -736,7 +721,7 @@ end
 %combination of parameters can be determined by considering 4 things: the
 %velocity of each person,the force applied to each person, the time required to reach the food table and the
 %time required to find an empty table.
-function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p)
+function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost_t2_tot)
 %function to calculate the cost considering the velocity of each person and the force 
 % applied to each person. 
 % The cost for a general velocity is set to be proportional to 1/v ( as used often in
@@ -747,10 +732,13 @@ function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p)
 v=sqrt(vx_upt.^2+vy_upt.^2); %velocity
 cost_v=1./v;
 for p=1:1:N_p
+   if cost_t2_tot(1,p)~=0
+        cost_v(p)=0;
+    end
     if v(p)==v_lim
         cost_v(p)=0;
     end
-    if v(p)==0
+    if v(p)==0 && cost_t2_tot(1,p)==0
         cost_v(p)=1/0.1;
     end
 end
