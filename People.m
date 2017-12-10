@@ -55,7 +55,7 @@ N_f = 2;   % number of foods
 
 % Wall and tables constant repulsion
 C_w = 0.0003;
-C_t = 0.03;
+C_t = 0.05;
 % Maximum people near one table before it becomes full
 max_p = 6;
 % Distance at which people stay from the table centre
@@ -189,18 +189,20 @@ for t=dt:dt:final_time
     %If every person has reached the tables, no further calculations are
     %needed
     if sum(cost_t2_tot==0)==0
-        t
         break
     end
 end
 cost_v_tot=mean(sum(cost_v_mean)./sum(cost_v_mean~=0)); %calculating cost of velocity for every person
 cost_f_tot=mean(sum(cost_f_mean)./sum(cost_v_mean~=0));%calculating cost of force for every person
 cost_time_tot=mean(cost_t1_tot+cost_t2_tot);
-end
 
-% % % %cost_total_to_be_averaged(statistical_attemp) = cost_total;
+
+cost_v_tot_to_be_averaged(statistical_attemp) = cost_v_tot;
+cost_f_tot_to_be_averaged(statistical_attemp) = cost_f_tot;
+cost_time_tot_to_be_averaged(statistical_attemp) = cost_time_tot;
+
 toc
-clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_total_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_time_tot cost_v_tot cost_f_tot
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_v_tot_to_be_averaged cost_f_tot_to_be_averaged cost_time_tot_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace   
 
 end
 
@@ -209,16 +211,20 @@ a = (N_p==N_p_vector)*(1:length(N_p_vector))';
 b = (N_t==N_t_vector)*(1:length(N_t_vector))';
 c = (tableShape==tableShape_vector)*(1:length(tableShape_vector))';
 d = (dist_f==dist_f_vector)*(1:length(dist_f_vector))';
-% % % %cost_total_matrix(a,b,c,d) = sum(cost_total_to_be_averaged)/length(cost_total_to_be_averaged);
-clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_time_tot cost_v_tot cost_f_tot
+cost_v_tot_matrix(a,b,c,d) = sum(cost_v_tot_to_be_averaged)/length(cost_v_tot_to_be_averaged);
+cost_f_tot_matrix(a,b,c,d) = sum(cost_f_tot_to_be_averaged)/length(cost_f_tot_to_be_averaged);
+cost_time_tot_matrix(a,b,c,d) = sum(cost_time_tot_to_be_averaged)/length(cost_time_tot_to_be_averaged);
 
 
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_time_tot cost_v_tot cost_f_tot
+
+end
 end
 end
 end
 
 if do_you_want_to_save_the_workspace~=0
-    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_time_tot cost_v_tot cost_f_tot
+    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix number_statistical_attemps cost_time_tot cost_v_tot cost_f_tot
     name_file = 'CHANGING--';
     if length(N_p_vector)~=1
         name_file = strcat(name_file,'N_p--');
@@ -232,7 +238,7 @@ if do_you_want_to_save_the_workspace~=0
     if length(dist_f_vector)~=1
         name_file = strcat(name_file,'dist_f--');
     end
-    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix name_file cost_time_tot cost_v_tot cost_f_tot
+    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix name_file cost_time_tot cost_v_tot cost_f_tot
     name_file = strcat(name_file,'TIME_');
     name_file = strcat(name_file,datestr(datetime));
     save(name_file);
@@ -249,7 +255,7 @@ if(tableShape == 1) % if in circular shape
     
     for i = 1:1:N_t
         
-        x(i) = 4.75 + 1.5*cos(2*pi/N_t * (i-1));
+        x(i) = 5 + 1.5*cos(2*pi/N_t * (i-1));
         y(i) = 4 + 1.5*sin(2*pi/N_t * (i-1));
            
     end
