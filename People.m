@@ -129,7 +129,7 @@ for t=dt:dt:final_time
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
                 
-        [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table);
+        [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,N_t);
         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
         cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
         if cost_t2_tot(1,i)~=0 && cost_t2_tot(1,i)>cost_t1_tot(1,i)
@@ -672,12 +672,12 @@ f=sqrt((person(:,5)).^2+(person(:,6)).^2); %force
 cost_f=f;
 end
 
-function [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table)
+function [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,N_t)
 % function to calculate the cost considering the time to reach the
 % objectives of every person.One fist cost consideres the time to reach the
 % food table and the cost is equal to the time to reach it. The second cost
 % considers the time to find and reach an empty table. 
-if person(i,10)==1 | person(i,10)==2 | person(i,10)==3 | person(i,10)==4 | person(i,10)==5 | person(i,10)==6  && cost_t1_tot(1,i)==0
+if  sum(person(i,10)==1:N_t)~=0 && cost_t1_tot(1,i)==0
     time(i)=t; 
     cost_t1(1,i)=time(i);
     
