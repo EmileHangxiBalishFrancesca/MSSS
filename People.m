@@ -4,13 +4,13 @@ clc
 % this file is a sample program to illustract the structure of our social
 % model algorithm for Apero
 
-N_p = 10;   % number of people
+N_p = 48;   % number of people
 tableShape = 2; % 1 for circle 2 for rectangular
-N_t = 6;  % number of table % should be ven if it is rectangular
+N_t = 8;  % number of table % should be ven if it is rectangular
 N_f = 2;   % number of foods
 
 % Desired velocity
-v0 = 0.2;
+v0 = 0.3;
 % Limit velocity
 v_lim = 2*v0;
 
@@ -67,14 +67,14 @@ y_map = linspace(0,10,200);
 
 % Initialization of the attributes of people, food, table and map
 %People's initial position
-min_distance = abs(X_map(1,1)-X_map(1,2))*10/N_p; % Minimum initial distance among people
+min_distance = abs(X_map(1,1)-X_map(1,2))*1/N_p; % Minimum initial distance among people
 [person(:,1), person(:,2)] = people_initial_position(person,X_map,Y_map,min_distance);
 %People's initial velocity
 %????
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
 %Food location
-food = [4.7 0.2; 4.8 0.2];
+food = [4.7 1; 4.8 1];
 %Tables location
 [table_x , table_y] = tablePositions(tableShape,N_t);
 table(:,1:2) = [table_x table_y];
@@ -129,7 +129,7 @@ for t=dt:dt:final_time
         [fx_people , fy_people] = person_people_force(person(i,:), people ,dt,A,B,sightAngle,sightCoef);
         person(i,5:6) = person(i,5:6) + [fx_people fy_people];
                 
-        [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,N_t);
+        [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,min_dist_obj,N_t);
         cost_t1_tot(1,i)=cost_t1_tot(1,i)+cost_t1(1,i);
         cost_t2_tot(1,i)=cost_t2_tot(1,i)+cost_t2(1,i);
         if cost_t2_tot(1,i)~=0 && cost_t2_tot(1,i)>cost_t1_tot(1,i)
@@ -672,7 +672,7 @@ f=sqrt((person(:,5)).^2+(person(:,6)).^2); %force
 cost_f=f;
 end
 
-function [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,N_t)
+function [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,min_dist_obj,N_t)
 % function to calculate the cost considering the time to reach the
 % objectives of every person.One fist cost consideres the time to reach the
 % food table and the cost is equal to the time to reach it. The second cost
@@ -688,7 +688,7 @@ if cost_t1_tot(1,i)~=0
     dist_person_objective_x = person(i,8) - person(i,1);
     dist_person_objective_y = person(i,9) - person(i,2);
     tot_dist_person_objective = (dist_person_objective_x.^2+dist_person_objective_y.^2).^(1/2);
-   if (tot_dist_person_objective <= (2*min_dist_table)) && cost_t2_tot(1,i)==0 %what is table radius?? 
+   if (tot_dist_person_objective <= (min_dist_table+min_dist_obj)) && cost_t2_tot(1,i)==0 %what is table radius?? 
      
       time2(i)=t;
       cost_t2(1,i)=time2(i);
