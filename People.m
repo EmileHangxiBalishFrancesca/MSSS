@@ -193,9 +193,9 @@ for t=dt:dt:final_time
         break
     end
 end
-cost_v_tot=sum(cost_v_mean)./sum(cost_v_mean~=0); %calculating cost of velocity for every person
-cost_f_tot=sum(cost_f_mean)./sum(cost_v_mean~=0);%calculating cost of force for every person
-cost_time_tot=cost_t1_tot+cost_t2_tot;
+cost_v_tot=mean(sum(cost_v_mean)./sum(cost_v_mean~=0)); %calculating cost of velocity for every person
+cost_f_tot=mean(sum(cost_f_mean)./sum(cost_v_mean~=0));%calculating cost of force for every person
+cost_time_tot=mean(cost_t1_tot+cost_t2_tot);
 end
 
 % % % %cost_total_to_be_averaged(statistical_attemp) = cost_total;
