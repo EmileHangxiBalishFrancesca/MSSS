@@ -13,11 +13,11 @@ clc
 
 %EVERYTHING IS OUTSIDE THE SIMULATION LOOP MUST BE ADDED TO CLEARVARS AT
 %THE END OF THE LOOPS
-N_p_vector = [20:21];   % number of people
+N_p_vector = [20:2:36];   % number of people
 N_t_vector = [6];  % number of table % should be ven if it is rectangular
-tableShape_vector = [1]; % 1 for circle 2 for rectangular
+tableShape_vector = [1:2]; % 1 for circle 2 for rectangular
 dist_f_vector = [1]; %distance food-food
-number_statistical_attemps = 3;
+number_statistical_attemps = 10;
 
 %Testing the parameters
 for N_p = N_p_vector %changing the number of people 
@@ -202,7 +202,8 @@ cost_f_tot_to_be_averaged(statistical_attemp) = cost_f_tot;
 cost_time_tot_to_be_averaged(statistical_attemp) = cost_time_tot;
 
 toc
-clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_v_tot_to_be_averaged cost_f_tot_to_be_averaged cost_time_tot_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace   
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_total_matrix number_statistical_attemps cost_v_tot_to_be_averaged cost_f_tot_to_be_averaged cost_time_tot_to_be_averaged N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix
+   
 
 end
 
@@ -216,7 +217,7 @@ cost_f_tot_matrix(a,b,c,d) = sum(cost_f_tot_to_be_averaged)/length(cost_f_tot_to
 cost_time_tot_matrix(a,b,c,d) = sum(cost_time_tot_to_be_averaged)/length(cost_time_tot_to_be_averaged);
 
 
-clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace cost_time_tot cost_v_tot cost_f_tot
+clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix number_statistical_attemps N_p N_t tableShape dist_f do_you_want_to_save_the_workspace
 
 end
 end
@@ -224,7 +225,7 @@ end
 end
 
 if do_you_want_to_save_the_workspace~=0
-    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix number_statistical_attemps cost_time_tot cost_v_tot cost_f_tot
+    clearvars -except static_fx static_fy N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix number_statistical_attemps
     name_file = 'CHANGING--';
     if length(N_p_vector)~=1
         name_file = strcat(name_file,'N_p--');
@@ -238,7 +239,7 @@ if do_you_want_to_save_the_workspace~=0
     if length(dist_f_vector)~=1
         name_file = strcat(name_file,'dist_f--');
     end
-    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix name_file cost_time_tot cost_v_tot cost_f_tot
+    clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix name_file
     name_file = strcat(name_file,'TIME_');
     name_file = strcat(name_file,datestr(datetime));
     save(name_file);
