@@ -1,0 +1,178 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                
+\geometry{letterpaper}                   
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{natbib}
+\usepackage{amssymb, amsmath}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+%\title{How do participants act during an apéro at ETH}
+%\author{Emek Barış Küçüktabak, Francesca Sabena, Emile Courthoud, Hangxi Li}
+%\date{date} 
+
+\begin{document}
+
+
+\input{cover}
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\section*{Agreement for free-download}
+\bigskip
+
+
+\bigskip
+
+
+\large We hereby agree to make our source code for this project freely available for download from the web pages of the SOMS chair. Furthermore, we assure that all source code is written by ourselves and is not violating any copyright restrictions.
+
+\begin{center}
+
+\bigskip
+
+
+\bigskip
+
+
+\begin{tabular}{@{}p{1cm}@{}p{8cm}@{}@{}p{8cm}@{}}
+\begin{minipage}{1cm}
+
+\end{minipage}
+&
+\begin{minipage}{6cm}
+\vspace{2mm} \large Emek Barış Küçüktabak, Francesca Sabena
+
+ \vspace{\baselineskip}
+
+\end{minipage}
+&
+\begin{minipage}{4cm}
+
+\large Emile Courthoud, Hangxi Li
+
+\end{minipage}
+\end{tabular}
+
+
+\end{center}
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+% IMPORTANT
+% you MUST include the ETH declaration of originality here; it is available for download on the course website or at http://www.ethz.ch/faculty/exams/plagiarism/index_EN; it can be printed as pdf and should be filled out in handwriting
+
+
+%%%%%%%%%% Table of content %%%%%%%%%%%%%%%%%
+
+\tableofcontents
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\section{Abstract}
+
+\section{Individual contributions}
+
+The project is completed by the cooperation of the whole team:Francesca Sabena, Emek Barış Küçüktabak, Emile Courthoud and Hangxi Li. The research problem and the approach method are decided by group discussion. Emile contributed the overall program structure, static wall field, and objective direction; Emek contributed the arrangement of table, the person-person force, and table designation; Francesca contributed the cost function and Hangxi contributed the food and table forces and position-velocity change. The final report and analysis is written by the whole team. Each one has contributed equal to the project.
+
+\section{Introduction and Motivations}
+The interaction among a group of people is always an interesting research problem. The social force model, which was proposed by Helbing\citep{Socialforce} in order to analyze the pedestrian behaviour, has been proved to be a successful theory to explain the reaction of individuals under the influence of surrounding environment and other people. Recent researches have used social force model to analyze the behaviour of people under the circumstance of ...... \citep{}. In this report, we will also use social force model to simulate the people during the apero. 
+
+Apero is a small place for people to gather together. In ETHz, there are many conferences, seminars and talks. After these meetings, an apero would usually take place for people to have a drink or eat something. People participating the apero would at first try to get food from the bouffe table, and then they will gather around the pre-set tables to make conversations. An real apero in the ETH main building is shown in figure.\ref{fig:apero}.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.3]{apero.jpg}
+\caption{Apéro in the ETH}
+\label{fig:apero}
+\end{figure}
+
+People are always tending to make the shortest path to reach their destinations. However, if there are a group of people, the mutual interactions within them and obstacles in the movement directions will fluctuate their actual path, and in some cases, block their movements. We therefore want to answer the following question: in what situations, given a set of pre-deteremined parameters, people can get their food and reach tables quickly and successfully in an apero. We in the report use social force model to simulate people's behaviours, assuming that people will make their desired movement direction right towards their destinations, but at the same time, their actual movements are affected by environment and other people, which are described by different social forces.
+\section{Description of the Model}
+To simulate the behaviors of people during an Apero, social force model that has been suggested by Helbing \citep{Socialforce}, is used with some modifications. This model explains the motion of people due to force fields occurring from their destination, obstacles and other people. During an Apero, all the people have destinations, either food or an empty table, their motion is limited by the walls, tables and the position and motion of other people. Thus, this model is thought to be suitable for this simulation.
+\subsection{Force due to desination}
+In real life, people go towards their destination by facing to that point, and trying to move around a constant velocity. This force model acts like a simple proportional controller, where the inputs to this controller are the actual velocity vector and the desired velocity vector.
+
+Desired velocity direction, $\vec{e}_\alpha$ can be defined as in Eq. \ref{develodir}, where as $\vec{r}_\alpha$ denotes the actual position,  $\vec{d}_\alpha$ indicates the position of the destination of the pedestrian $\alpha$,
+\begin{equation}
+    \vec{e}_\alpha(t):=\frac{\vec{d}_\alpha-\vec{r}_\alpha(t)}{\| \vec{d}_\alpha-\vec{r}_\alpha(t) \|}
+\label{develodir}
+\end{equation}
+So the force on a pedestrian can be written as the multiplication of a constant with the difference of desired velocity vector and the actual velocity vector, as in Eq.\ref{forcedevevec}, where $\vec{v}_\alpha^0$ is the desired speed and $\vec{v}_\alpha$ is the actual speed of the pedestrian $\alpha$,
+\begin{equation}
+    F_\alpha^0(\vec{v}_\alpha,v_\alpha^0\vec{e}_\alpha) := \frac{1}{\tau}(v_\alpha^0\vec{e}_\alpha-\vec{v}_\alpha)
+\label{forcedevevec}
+\end{equation}
+
+\subsection{Force due to other pedestrains}
+Another important thing that effects the motion of a pedestrian is the behaviors of the other pedestrians. People get uncomfortable due to other people mainly in 2 cases. First, if somebody is too close to them; second, if somebody is moving towards them.
+By using these 2 facts, force exerted by a person on other people are defined to be occur from a monotonic decreasing force field with elliptical shape, where the major axis of the ellipse coincides with the velocity vector of the person who exerts the force. Monotonic decreasing part makes the force weaker when the distance between 2 people increases. Elliptical shape makes the force stronger on the points which towards closer to the direction of the person velocity. This effect can be shown as in Eq.\ref{personforcefield},
+\begin{equation}
+    \vec{f}_{\alpha\beta}:=-\nabla_{\vec{r}_{\alpha\beta}}V_{\alpha\beta}[b(\vec{r}_{\alpha\beta})]
+\label{personforcefield}
+\end{equation}
+$\vec{f}_{\alpha\beta}$ is the force exerted from pedestrian $\beta$ to pedestrian $\alpha$, $V_{\alpha\beta}$ is any monotonically decreasing function, $\vec{r}_{\alpha\beta}$ is the position of $\beta$ with respect to $\alpha$ and $b$ is the length of the semi minor axis of the described ellipse which is defined in equation Eq.\ref{2b},
+\begin{equation}
+    2b:=\sqrt{(\|\vec{r}_{\alpha\beta}\|+\|\vec{r}_{\alpha\beta}-v_\beta\Delta t\vec{e}_{\beta}\|)^2-(v_\beta\Delta t)^2}
+    \label{2b}
+\end{equation}
+
+If force is defined like this, a person would be effected same as other people who are behind him/her as the people who are in front of him/her. To avoid this, calculated force is multiplied by a coefficient $w$, which is defined as : 
+\begin{equation}
+    w(\vec{e},\vec{f})=\begin{cases}
+    1, & \text{if $\vec{e}\cdot\vec{f}\geq\|\vec{f}\|\cos{\phi}$}.\\
+    0, & \text{otherwise}.
+  \end{cases}
+\end{equation}
+where $c$ is taken a value between 0 and 1.
+
+\subsection{Force due to obstacles and walls}
+People gets uncomfortable as they gets closer to the walls and obstacles. This effect can be visualized as a force coming from the obstacles whose magnitude increases monotonically as the distance between people and obstacles decreases. Thus, similar to the force between people, force due to walls can be described as follows:
+\begin{equation}
+    \vec{F}_{\alpha B}:=-\nabla_{\vec{r}_{\alpha B}}U_{\alpha B}[b(\|\vec{r}_{\alpha B}\|)]
+\end{equation}
+where $ \vec{F}_{\alpha B}$ is the force between pedestrian $\alpha$ and obstacle $B$. And $U_{\alpha B}$ is any monotonically decreasing function with respect to distance between pedestrian and obstacle. Details of that function is explained under the implementation section.
+
+\subsection{Total Force}
+Resultant force at a time instant on a pedestrian is simply the sum of force due to objective, forces exerted by all of the obstacles/walls and forces from every person in the room. This is shown in Eq[x+6],
+\begin{equation}
+    \vec{F}_\alpha(t):=\vec{F}_\alpha^0(\vec{v}_\alpha,v_\alpha^0\vec{e}_\alpha)+\sum_\beta\vec{F}_{\alpha\beta}(\vec{e}_\alpha,\vec{r}_\alpha-\vec{r}_\alpha)+\sum_B\vec{F}_{\alpha B}(\vec{e}_\alpha,\vec{r}_\alpha-\vec{r}_\alpha^B)
+\end{equation}
+
+\section{Implementation}
+\subsection{Social Force Model Algorithm}
+Under the description of the model section, it is explained that, it is a good idea to obtain the force from a monotonically decreasing potential field. Due to the fact that as the distance between people increase, their effects to each other decreases faster than the distance, an exponentially decreasing potential is used as in Eq.\ref{personpersonpoten}.
+\begin{equation}
+    V_{\alpha\beta}(b)=V^0_{\alpha\beta}e^{b/\sigma}
+    \label{personpersonpoten}
+\end{equation}
+where, $V^0_{\alpha\beta}$ is taken $2m^2s^{-2}$ and $\sigma=0.2m$. Moreover, force between two agents is post multiplied by a constant depending on their heading and angle between them. If the angle between heading direction of pedestrian $\alpha$ and the position vector of pedestrian $\beta$ is more than $60^\circ$, calculated force exerted from $\beta$ to $\alpha$ is multiplied by 0.3 to decrease the effect. One may expect to think that the force exerted from $\alpha$ to $\beta$ to be equal to the force exerted from $\beta$ to $\alpha$. However, this is sometimes not the case. For example, there are 2 people going to a same destination, one in front of the other. While there is a great force exerted from the person in front to the behind, the force exerted from the person on behind to the front one is much less. 
+\section{Simulation Results and Discussion}
+
+\section{Summary and Outlook}
+
+\section{References}
+
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}  
+
+
+
+ 
