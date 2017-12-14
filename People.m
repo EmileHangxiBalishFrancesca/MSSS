@@ -13,10 +13,10 @@ clc
 
 %EVERYTHING IS OUTSIDE THE SIMULATION LOOP MUST BE ADDED TO CLEARVARS AT
 %THE END OF THE LOOPS
-N_p_vector = [20:2:36];   % number of people
-N_t_vector = [6];  % number of table % should be ven if it is rectangular
-tableShape_vector = [1:2]; % 1 for circle 2 for rectangular
-dist_f_vector = [1]; %distance food-food
+N_p_vector = [36];   % number of people
+N_t_vector = [6];  % number of table % should be ven if it is rectangular % 
+tableShape_vector = [2]; % 1 for circle 2 for rectangular
+dist_f_vector = [0.01:0.2:1]; %distance food-food
 number_statistical_attemps = 10;
 
 %Testing the parameters
@@ -28,6 +28,9 @@ for dist_f = dist_f_vector %changing the distance food-food
  
 for statistical_attemp = 1:number_statistical_attemps
 tic
+
+% Maximum people near one table before it becomes full
+tableCapacity = 6;
 
 %For simulations, I don't want to plot anything. 0 for not to plot
 %anything, 1 to see plots.
@@ -56,8 +59,7 @@ N_f = 2;   % number of foods
 % Wall and tables constant repulsion
 C_w = 0.0003;
 C_t = 0.05;
-% Maximum people near one table before it becomes full
-max_p = 6;
+
 % Distance at which people stay from the table centre
 min_dist_table = 0.3;
 % Distance at which people stay from the objective (table border of food
@@ -71,7 +73,7 @@ B = 0.1; % same as paper
 sightAngle = pi/30; % forces coming from people out of +- 60degree will be weaker
 sightCoef = 0.3;
 
-tableCapacity = 6; % capacity of 1 table can handle
+max_p = tableCapacity; % capacity of 1 table can handle
 
 %People's attributes: position, velocity, undergoing force,
 %velocity relaxation time, destination position, type of
@@ -240,8 +242,8 @@ if do_you_want_to_save_the_workspace~=0
         name_file = strcat(name_file,'dist_f--');
     end
     clearvars -except N_p_vector N_t_vector tableShape_vector dist_f_vector cost_v_tot_matrix cost_f_tot_matrix cost_time_tot_matrix name_file
-    name_file = strcat(name_file,'TIME_');
-    name_file = strcat(name_file,datestr(datetime));
+%     name_file = strcat(name_file,'TIME_');
+%     name_file = strcat(name_file,datestr(datetime));
     save(name_file);
 end
 
