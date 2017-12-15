@@ -34,7 +34,7 @@ tableCapacity = 6;
 
 %For simulations, I don't want to plot anything. 0 for not to plot
 %anything, 1 to see plots.
-do_you_want_to_plot = 0;
+do_you_want_to_plot = 1;
 %For simulations, do you want save the workspace with results? 1=yes, 0=no
 do_you_want_to_save_the_workspace = 1;
 
@@ -153,8 +153,7 @@ for t=dt:dt:final_time
         person(i,5:6) = person(i,5:6) + [fx_wall fy_wall];
         
         
-        [fx_objective , fy_objective] = person_objective_force(person(i,:),v0,table,food);
-        person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
+
         
         [fx_table, fy_table] = person_tables_force(person(i,:),table,food,table_const);
         person(i,5:6) = person(i,5:6) + [fx_table fy_table];
@@ -168,6 +167,10 @@ for t=dt:dt:final_time
         if cost_t2_tot(1,i)~=0 && cost_t2_tot(1,i)>cost_t1_tot(1,i)
             cost_t2_tot(1,i)=cost_t2_tot(1,i)-cost_t1_tot(1,i);
         end
+        
+        [fx_objective , fy_objective] = person_objective_force(person(i,:),v0,table,food);
+        person(i,5:6) = person(i,5:6) + [fx_objective fy_objective];
+        
     end
     
     
@@ -179,7 +182,7 @@ for t=dt:dt:final_time
     person(:,[1:4 10]) = [x_upt , y_upt , vx_upt , vy_upt, d_upt];
     
     
-    [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost_t2_tot);
+    [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost_t2_tot,dt);
     s=s+1;
     cost_v_mean(s,:)=cost_v; 
     cost_f_mean(s,:)=cost_f;
@@ -730,7 +733,7 @@ end
 %combination of parameters can be determined by considering 4 things: the
 %velocity of each person,the force applied to each person, the time required to reach the food table and the
 %time required to find an empty table.
-function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost_t2_tot)
+function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost_t2_tot,dt)
 %function to calculate the cost considering the velocity of each person and the force 
 % applied to each person. 
 % The cost for a general velocity is set to be proportional to 1/v ( as used often in
@@ -740,19 +743,28 @@ function [cost_v,cost_f] = cost_function_v_f(person,vx_upt,vy_upt,v_lim,N_p,cost
 % values of every person considering the force applied every dt.
 v=sqrt(vx_upt.^2+vy_upt.^2); %velocity
 cost_v=1./v;
+% Maximum cost of the velocity, related to the limit velocity
+maximum_cost_velocity = 1/(v_lim/6); %if v_lim = 0.6, max cost is 10.
+% "Emile": the maximum force is the force that pushes a person to 
+%accelerate from v=0 to v=v_lim in just one time step.
+maximum_cost_force = v_lim/dt;
+f=sqrt((person(:,5)).^2+(person(:,6)).^2); %force
+cost_f=f;
 for p=1:1:N_p
-   if cost_t2_tot(1,p)~=0
+    if cost_t2_tot(1,p)~=0
         cost_v(p)=0;
+        cost_f(p)=0;
     end
     if v(p)==v_lim
         cost_v(p)=0;
     end
-    if v(p)==0 && cost_t2_tot(1,p)==0
-        cost_v(p)=1/0.1;
+    if (1/v(p))>=maximum_cost_velocity && cost_t2_tot(1,p)==0
+        cost_v(p)=maximum_cost_velocity;
+    end
+    if cost_f(p)>=maximum_cost_force && cost_t2_tot(1,p)==0
+        cost_f(p)=maximum_cost_force;
     end
 end
-f=sqrt((person(:,5)).^2+(person(:,6)).^2); %force
-cost_f=f;
 end
 
 function [cost_t1,cost_t2] = cost_function_t(i,person,cost_t1_tot,cost_t2_tot,t,min_dist_table,min_dist_obj,N_t)
