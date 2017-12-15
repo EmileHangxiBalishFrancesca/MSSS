@@ -85,12 +85,12 @@
 
 \section{Individual contributions}
 
-The project is completed by the cooperation of the whole team:Francesca Sabena, Emek Barış Küçüktabak, Emile Courthoud and Hangxi Li. The research problem and the approach method were decided by a group discussion. Emile contributed to the overall program structure, static wall field, and objective direction; Emek contributed to the arrangement of the table, the person-person force, and table designation; Francesca contributed to the cost function and Hangxi contributed to the food and table forces and position-velocity change. The final report and analysis is written by the whole team. Each team member has contributed in equal amount to the project.
+The project is completed by the cooperation of the whole team: Francesca Sabena, Emek Barış Küçüktabak, Emile Courthoud and Hangxi Li. The research problem and the approach method were decided by a group discussion. Emile contributed to the overall program structure, static wall field, and objective direction; Emek contributed to the arrangement of the table, the person-person force, and table designation; Francesca contributed to the cost function and Hangxi contributed to the food and table forces and position-velocity change. The final report and analysis is written by the whole team. Each team member has contributed in equal amount to the project.
 
 \section{Introduction and Motivations}
-The interaction among a group of people is always an interesting research problem. The social force model, which was proposed by Helbing\cite{Socialforce,ModificationSocialforce} in order to analyze the pedestrian behaviour, has been proved to be a successful theory to explain the reaction of individuals under the influence of surrounding environment and other people. Recent researches have used the social force model to analyze the behaviour of a pedestrian crowd\cite{crowd1,crowd2,crowd3,traffic3crowd4}, traffic\cite{traffic1,traffic2,traffic3crowd4}, and fish movement\cite{fish}. In this report, we will also use the social force model to simulate the behaviour of the people during the apero. 
+The interaction among a group of people has always been a stimulating research topic. The social force model, which was proposed by Helbing\cite{Socialforce,ModificationSocialforce} in order to analyze the pedestrian behaviour, has been proved to be a successful theory to describe the reaction of individuals under the influence of surrounding environment and other people. Recent researches have used the social force model to analyze the behaviour of a pedestrian crowd\cite{crowd1,crowd2,crowd3,traffic3crowd4}, traffic\cite{traffic1,traffic2,traffic3crowd4}, and fish movement\cite{fish}. In this report, we will apply the social force model to simulate the behaviour of the people during the apero. 
 
-An apero is a small place for people to gather together. In ETHz, there are many conferences, seminars and talks. After these meetings, an apero would usually take place for people to have a drink or eat something. People participating the apero would at first try to get food from the buffet table, and then they will gather around the pre-set tables to make conversations. A real apero in the ETH main building is shown in figure.\ref{fig:apero}.
+An apero is a event for people to gather, chat and eat together. In ETHz, there are many conferences, seminars and talks. After these meetings, an apero usually takes place. People that participate to the apero would at first try to get some food from the buffet table and then gather around the pre-set tables to have a conversation. A real apero in the ETH main building is shown in figure.\ref{fig:apero}.
 
 \begin{figure}[h!]
 \centering
@@ -99,10 +99,11 @@ An apero is a small place for people to gather together. In ETHz, there are many
 \label{fig:apero}
 \end{figure}
 
-People always tend to make the shortest path to reach their destinations. However, if there are is a group of people, the mutual interactions within them and with the obstacles in the movement directions will change their desired path, and in some cases, block their movements. We therefore want to answer the following question: in what situations, given a set of pre-deteremined parameters, people can get their food and reach tables quickly and successfully in an apero? In the report we use the social force model to simulate people's behaviours, assuming that people will have their desired movement direction right towards their destinations, but at the same time, their actual movements are affected by the environment and the other people, which are described by different social forces.
+People always tend to follow the shortest path in order to reach their destinations. However, if the environment includes several people, the mutual interaction among them and with the other obstacles will change their desired path; in some peculiar cases, it will even block people's movements for some time. We therefore want to answer the following question: in which situation, given a set of pre-determined parameters, people can get their food and reach tables quickly and successfully during an apero? 
+In the report we use the social force model to simulate people's behaviours, assuming that people have their desired movement direction right towards their destinations, but at the same time, their actual movements are affected by the environment and the other people, which are described by different social forces.
 \section{Description of the Model}
-To simulate the behaviors of the people during an Apero, the social force model that has been suggested by Helbing \cite{Socialforce}, is used with some modifications. This model explains the motion of people due to force fields occurring from their destination, obstacles and other people. During an Apero, all the people have destinations, either the food table or an empty table, and their motion is limited by the walls, tables and the position and motion of other people. Thus, this model is thought to be suitable for this simulation.
-\subsection{Force due to desination}
+To simulate the behaviours of the people during an apero, the social force model that has been suggested by Helbing \cite{Socialforce}, is used with some modifications. This model explains the motion of people due to force fields occurring from their destination, obstacles and other people. During an apero, all the people have destinations, which can consist in either the food table or an empty table, and their motion is limited by the walls, tables and the interaction with other people. Thus, this model is suitable for this simulation.
+\subsection{Force due to destination}
 In real life, people go towards their destination by facing to that point, and trying to move around a constant velocity. This force model acts like a simple proportional controller, where the inputs to this controller are the actual velocity vector and the desired velocity vector.
 
 Desired velocity direction, $\vec{e}_\alpha$ can be defined as in Eq. \ref{develodir}, where as $\vec{r}_\alpha$ denotes the actual position,  $\vec{d}_\alpha$ indicates the position of the destination of the pedestrian $\alpha$,
@@ -116,9 +117,9 @@ So the force on a pedestrian can be written as the multiplication of a constant 
 \label{forcedevevec}
 \end{equation}
 
-\subsection{Force due to other pedestrains}
-Another important thing that effects the motion of a pedestrian is the behavior of the other pedestrians. People get uncomfortable due to other people mainly in 2 cases. First, if somebody is too close to them; second, if somebody is moving towards them.
-By using these 2 facts, the force exerted by a person on other people is defined to be a monotonic decreasing force field with elliptical shape, where the major axis of the ellipse coincides with the velocity vector of the person who exerts the force. The monotonic decreasing part makes the force weaker when the distance between 2 people increases. The elliptical shape makes the force stronger on the points which are closer to the direction of the person's velocity. This effect can be shown as in Eq.\ref{personforcefield},
+\subsection{Force due to other pedestrians}
+Another important factor that affects the motion of a pedestrian is the behaviour of the other pedestrians. People get uncomfortable due to other people mainly in two cases. First, if somebody is too close to them; second, if somebody is moving towards them.
+By using these two facts, the force exerted by a person on other people is defined to be a monotonic decreasing force field with elliptical shape, where the major axis of the ellipse coincides with the velocity vector of the person who exerts the force. The monotonic decreasing part makes the force weaker when the distance between two people increases. The elliptical shape makes the force stronger on the points which are closer to the direction of the person's velocity. This effect can be shown as in Eq.\ref{personforcefield},
 \begin{equation}
     \vec{f}_{\alpha\beta}:=-\nabla_{\vec{r}_{\alpha\beta}}V_{\alpha\beta}[b(\vec{r}_{\alpha\beta})]
 \label{personforcefield}
@@ -139,7 +140,7 @@ If the force is defined like this, a person would be effected in the same way bo
 where $c$ is taken a value between 0 and 1.
 
 \subsection{Force due to obstacles and walls}
-People get uncomfortable as they get closer to the walls and obstacles. This effect can be visualized as a force coming from the obstacles whose magnitude increases monotonically as the distance between people and obstacles decreases. Thus, similar to the force between people, force due to walls can be described as follows:
+People feel uncomfortable as they get closer to the walls and obstacles. This effect can be visualized as a force coming from the obstacles whose magnitude increases monotonically as the distance between people and obstacles decreases. Thus, similar to the force between people, force due to walls can be described as follows:
 \begin{equation}
     \vec{F}_{\alpha B}:=-\nabla_{\vec{r}_{\alpha B}}U_{\alpha B}[b(\|\vec{r}_{\alpha B}\|)]
 \end{equation}
@@ -163,7 +164,7 @@ where, $V^0_{\alpha\beta}$ is taken $2m^2s^{-2}$ and $\sigma=0.2m$. Moreover, th
 \subsection{Wall - person repulsion}
 A pedestrian wants to keep a certain distance from the borders of the obstacles in the room, like the walls, doors and pillars.
 
-According to the description provided in the Social Force Model, the influence of the obstacles is modeled by a monotonically decreasing potential field. Focusing on our model, we described the wall-person interaction with a force inversely proportional to the distance between the them.
+According to the description provided in the Social Force Model, the influence of the obstacles is modelled by a monotonically decreasing potential field. Focusing on our model, we described the wall-person interaction with a force inversely proportional to the distance between the them.
 
 It must be remarked that the wall is not a point source. To describe the effect of every obstacle in space, we discretized them into several point sources at constant distance. The total repulsion force consists in the superposition of the point source contributions.
 
@@ -179,14 +180,14 @@ Finally, the force impact on a person is calculated as the weighted average of t
 We were aware that the discretization procedure introduces a physical inaccuracy. Nevertheless, the error related to the discretization of the walls and of the room becomes negligible when the distance composing the mesh is particularly accurate.
 
 \subsection{Table - person repulsion}
-The participants to the Apero usually want to take some food before moving to a table where they can eat and chat. While they move towards the food, the tables become obstacles. Their influence on pedestrian's movement is modeled in the same way of the wall repulsive force, except that the tables are considered point sources.
+The participants to the Apero usually want to take some food before moving to a table where they can eat and chat. While they move towards the food, the tables become obstacles. Their influence on pedestrian's movement is modelled in the same way of the wall repulsive force, except that the tables are considered point sources.
 
 As we did for the wall repulsion force, we established a table-person constant. We tested several values for this constant and eventually we set $C_t = 0.05$.
 
 \subsection{Path towards the objective}
 We assumed that the main objective of every person consists in taking the food as fast as possible and then move to the nearest table. In order to reach these two destinations, the pedestrians try to follow the shortest path.
 
-We modeled the pedestrian's attraction to the objective with a constant pulling force pointing towards the pedestrian's goal. If there are static obstacles like walls between a person and the objective, the pedestrian follows the shortest polygonal route.
+We modelled the pedestrian's attraction to the objective with a constant pulling force pointing towards the pedestrian's goal. If there are static obstacles like walls between a person and the objective, the pedestrian follows the shortest polygonal route.
 
 
 \section{Simulation Results and Discussion}
@@ -202,7 +203,3 @@ We modeled the pedestrian's attraction to the objective with a constant pulling 
 \bibliographystyle{unsrt}
 \bibliography{references}
 \end{document}  
-
-
-
- 
