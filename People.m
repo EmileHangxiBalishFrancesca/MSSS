@@ -14,14 +14,21 @@ clc
 %EVERYTHING IS OUTSIDE THE SIMULATION LOOP MUST BE ADDED TO CLEARVARS AT
 %THE END OF THE LOOPS
 N_p_vector = [36];   % number of people
-N_t_vector = [6];  % number of table % should be ven if it is rectangular % 
-tableShape_vector = [2]; % 1 for circle 2 for rectangular
-dist_f_vector = [0.01:0.2:1]; %distance food-food
-number_statistical_attemps = 10;
+N_t_vector = [4 8 12];  % number of table % should be ven if it is rectangular % 
+tableShape_vector = [1:2]; % 1 for circle 2 for rectangular
+dist_f_vector = [0.01 0.5 2 3.5]; %distance food-food
+number_statistical_attemps = 20;
 
 %Testing the parameters
 for N_p = N_p_vector %changing the number of people 
 for N_t = N_t_vector %changing table number
+    if length(N_p)==1
+        %{
+        N_p = N_t*6;
+        N_p_vector=N_t_vector.*6;
+        disp('bad way of coding')
+        %}
+    end
 for tableShape = tableShape_vector %changing the table disposition
 for dist_f = dist_f_vector %changing the distance food-food
 
@@ -34,7 +41,7 @@ tableCapacity = 6;
 
 %For simulations, I don't want to plot anything. 0 for not to plot
 %anything, 1 to see plots.
-do_you_want_to_plot = 1;
+do_you_want_to_plot = 0;
 %For simulations, do you want save the workspace with results? 1=yes, 0=no
 do_you_want_to_save_the_workspace = 1;
 
@@ -58,10 +65,10 @@ N_f = 2;   % number of foods
 
 % Wall and tables constant repulsion
 C_w = 0.0003;
-C_t = 0.05;
+C_t = 0.07;
 
 % Distance at which people stay from the table centre
-min_dist_table = 0.3;
+min_dist_table = 0.2;
 % Distance at which people stay from the objective (table border of food
 % point)
 min_dist_obj = 0.1;
@@ -100,7 +107,7 @@ food = zeros(N_f,attributes_f);
 
 % Initialization of the attributes of people, food, table and map
 %People's initial position
-min_distance = abs(X_map(1,1)-X_map(1,2))*1/N_p; % Minimum initial distance among people
+min_distance = abs(X_map(1,1)-X_map(1,2))*1/N_p^1.5; % Minimum initial distance among people
 [person(:,1), person(:,2)] = people_initial_position(person,X_map,Y_map,min_distance);
 %People's initial velocity
 %????
@@ -300,7 +307,7 @@ N_p = size(person,1);
 %too close to the objective, it is stopped, positioned at a safety distance
 %and the objective is changed (from d=0 food to d=1 table or d=???? table
 %reached)
-corner = [2.5 7; 7 7];
+corner = [2.5 7; 7.5 7];
 dist_person_obj = ((person(:,1)-person(:,8)).^2+(person(:,2)-person(:,9)).^2).^(1/2);
 dist_person_obj( (person(:,8)==corner(1,1) & person(:,9)==corner(1,2)) | (person(:,8)==corner(2,1) & person(:,9)==corner(2,2)) ) = max(dist_person_obj);
 min_dist_obj = repelem(min_dist_obj,N_p,1) + (person(:,10)~=0).*min_dist_table;
@@ -309,8 +316,8 @@ v_tot = (person(:,3).^2+person(:,4).^2).^(1/2);
 %If the person has reached the objective and is too near to it, he/she is
 %shift to the min_dist from the objective
 
-x = (dist_person_obj>min_dist_obj).*person(:,1)+(dist_person_obj<=min_dist_obj).*(person(:,8)-min_dist_obj.*person(:,3)./v_tot);
-y = (dist_person_obj>min_dist_obj).*person(:,2)+(dist_person_obj<=min_dist_obj).*(person(:,9)-min_dist_obj.*person(:,4)./v_tot);
+x = (dist_person_obj>min_dist_obj | v_tot==0).*person(:,1)+(dist_person_obj<=min_dist_obj & v_tot~=0).*(person(:,8)-min_dist_obj.*person(:,3)./v_tot);
+y = (dist_person_obj>min_dist_obj | v_tot==0).*person(:,2)+(dist_person_obj<=min_dist_obj & v_tot~=0).*(person(:,9)-min_dist_obj.*person(:,4)./v_tot);
 
 %If the person has reached the objective, he/she stops.
 vx = (dist_person_obj>min_dist_obj).*person(:,3);
@@ -418,7 +425,7 @@ y_obj = reshape(y_obj,[],1);
 
 %If a person is situated in one of the top corner, the the destination is
 %splitted into a polygonal line going to the corner, then to food
-corner = [2.5 7; 7 7];
+corner = [2.5 7; 7.5 7];
 
 %If you are in the bad corner of the room but you can see the second food,
 %move towards it.
