@@ -1,10 +1,10 @@
 close all
 
-N_p_vector = [60];   % number of people
-N_t_vector = [10];  % number of table % should be ven if it is rectangular % 
+N_p_vector = [72];   % number of people
+N_t_vector = [8];  % number of table % should be ven if it is rectangular % 
 tableShape_vector = [2]; % 1 for circle 2 for rectangular
-dist_f_vector = [0.01:0.1:2.0]; %distance food-food
-number_statistical_attemps = 10;
+dist_f_vector = [0.01:0.3:3.0]; %distance food-food
+number_statistical_attemps = 20;
 
 
 trial=0;
@@ -15,17 +15,17 @@ for i=1:length(N_p_vector)
                 trial = trial+1;
                 figure(1)
                 hold on
-                plot(dist_f_vector,reshape(cost_time_tot_matrix(i,j,k,:),1,[]))
+                errorbar(dist_f_vector,reshape(cost_time_tot_matrix(i,j,k,:),1,[]),reshape(variance_time(i,j,k,:),1,[]))
                 title('time')
                 hold off
                 figure(2)
                 hold on
-                plot(dist_f_vector,reshape(cost_f_tot_matrix(i,j,k,:),1,[]))
+                errorbar(dist_f_vector,reshape(cost_f_tot_matrix(i,j,k,:),1,[]),reshape(variance_f(i,j,k,:),1,[]))
                 title('force')
                 hold off
                 figure(3)
                 hold on
-                plot(dist_f_vector,reshape(cost_v_tot_matrix(i,j,k,:),1,[]))
+                errorbar(dist_f_vector,reshape(cost_v_tot_matrix(i,j,k,:),1,[]),reshape(variance_v(i,j,k,:),1,[]))
                 title('velocity')
                 hold off
                 
