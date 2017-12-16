@@ -13,10 +13,10 @@ clc
 
 %EVERYTHING IS OUTSIDE THE SIMULATION LOOP MUST BE ADDED TO CLEARVARS AT
 %THE END OF THE LOOPS
-N_p_vector = [1:10];   % number of people
-N_t_vector = [6];  % number of table % should be ven if it is rectangular % 
-tableShape_vector = [1]; % 1 for circle 2 for rectangular
-dist_f_vector = [0.01]; %distance food-food
+N_p_vector = [72];   % number of people
+N_t_vector = [8];  % number of table % should be ven if it is rectangular % 
+tableShape_vector = [2]; % 1 for circle 2 for rectangular
+dist_f_vector = [0.01:0.1:3.0]; %distance food-food
 number_statistical_attemps = 30;
 
 %Testing the parameters
@@ -37,7 +37,7 @@ for statistical_attemp = 1:number_statistical_attemps
 tic
 
 % Maximum people near one table before it becomes full
-tableCapacity = 6;
+tableCapacity = 9;
 
 %For simulations, I don't want to plot anything. 0 for not to plot
 %anything, 1 to see plots.
@@ -114,7 +114,7 @@ min_distance = abs(X_map(1,1)-X_map(1,2))*1/N_p^1.5; % Minimum initial distance 
 %People's initial destination is already set to zero (i.e the food)
 %Peoples's relaxtion time
 %Food location
-food = [(5-dist_f/2) 1; (5+dist_f/2) 1];
+food = [(5-dist_f/2) 2; (5+dist_f/2) 2];
 %Tables location
 [table_x , table_y] = tablePositions(tableShape,N_t);
 table(:,1:2) = [table_x table_y];
