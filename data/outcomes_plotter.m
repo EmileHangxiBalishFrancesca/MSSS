@@ -2,7 +2,7 @@ close all
 
 N_p_vector = [72];   % number of people
 N_t_vector = [8];  % number of table % should be ven if it is rectangular % 
-tableShape_vector = [2]; % 1 for circle 2 for rectangular
+tableShape_vector = [1]; % 1 for circle 2 for rectangular
 dist_f_vector = [0.01:0.3:3.0]; %distance food-food
 number_statistical_attemps = 20;
 

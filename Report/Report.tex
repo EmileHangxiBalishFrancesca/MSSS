@@ -189,12 +189,54 @@ We assumed that the main objective of every person consists in taking the food a
 
 We modelled the pedestrian's attraction to the objective with a constant pulling force pointing towards the pedestrian's goal. If there are static obstacles like walls between a person and the objective, the pedestrian follows the shortest polygonal route.
 
+\subsection{Destination change}
+When people first reach to the Apéro hall, their first destination is the big table with the food on it. After they take their food, they usually want to carry their food to one of the small distributed tables on the hall. They tend to choose the table which is closer, not full and the one with, not more other people, than the capacity of the table goes to the table. In other words, if the maximum number of people that the table can afford is 5, and 7 people already on their way to that table, that person would not try to reach that table, because s/she knows s/he cannot make it. In our algorithm, people choose which table to go with the same logic. Pseudo code of this behavior given in Fig.\ref{fig:sudocode}:
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.7]{sudocode.png}
+\caption{The pseudo code of destination change}
+\label{fig:sudocode}
+\end{figure}
 
 \section{Simulation Results and Discussion}
+In order to simulate and to obtain some results to compare from our model, we implemented 3 functions that return the specific cost of every different simulation.
+
+The 3 parameters that taken into account are:
+\begin{itemize}
+    \item The time of each participant to reach the final table
+    \item The average velocity of each participant
+    \item The average total force applied to each participant
+\end{itemize}
+\hfill\break
+\underline{Time cost function}
+
+The time cost function takes into account the time required from each participant to reach the final table. It is the summation of the time to reach the food table (t1) and the time to reach the final table once the food has been taken (t2). The cost related to each person is equal to the total time required to reach the final table, and the cost of the simulation is the mean of the cost of each participant.\\
+\underline{Velocity cost function}
+
+The velocity cost function takes into account the average velocity of each participant, in order to penalize the simulations where the participants are stuck and their velocity is equal or close to zero. Since the cost should rise when the velocity is lower, in this function the cost of each participant is equal to $\frac{1}{v}$, where v is the mean velocity of each person. The total cost of the simulation is taken as the mean of the cost of each participant.\\
+\underline{Force cost function}
+
+The force cost function takes into account the average force applied to each participant during the entire simulation. The cost of each participant is equal to the total force applied despite the objective force and the total cost is taken as the mean of the cost of each participant.\\
+
+The simulation has been conducted by averaging the simulations with different parameters over 20 attempts each.
+
+The parameters that changed were:
+\begin{itemize}
+    \item Number of participants
+    \item Number of tables
+    \item Disposition of tables (Circle or Rectangular)
+    \item Distance between the food positions on the buffet table
+\end{itemize}
+
+\subsection{Changing the food positions}
+
+The following figures, fig.\ref{}, fig.\ref{}, fig.\ref{} shown are the cost of time, velocity and force if the table's disposition is rectangular or circle. The distance between the food positions varies from 0 to 2.7. In order to simulate the crowding situation, we initialized 72 people starting from both upper corners of the hall (each corner has 36 people), and there are 8 tables with the capacity of 9, so that each person will have his/her seat at the end of the simulation.
+
+The figure.\ref{} shows that, under the circle arrangement of table, the cost of time decrease 
 
 \section{Summary and Outlook}
 
-\section{References}
 
 
 
