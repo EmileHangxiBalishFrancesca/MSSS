@@ -43,7 +43,7 @@ for i=1:length(N_p_vector)
 %end
 
 clear legend_sentence
-legend_sentence = ['Rectangular table disposition';'Circular table disposition   '];
+legend_sentence = ['Rectangular table disposition';'Circular table disposition'];
 
 figure(1)
 legend(legend_sentence,'Location','northwest')

@@ -192,7 +192,7 @@ We modelled the pedestrian's attraction to the objective with a constant pulling
 \subsection{Destination change}
 When people first reach to the Apéro hall, their first destination is the big table with the food on it. After they take their food, they usually want to carry their food to one of the small distributed tables on the hall. They tend to choose the table which is closer, not full and the one with, not more other people, than the capacity of the table goes to the table. In other words, if the maximum number of people that the table can afford is 5, and 7 people already on their way to that table, that person would not try to reach that table, because s/she knows s/he cannot make it. In our algorithm, people choose which table to go with the same logic. Pseudo code of this behavior given in Fig.\ref{fig:sudocode}:
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \centering
 \includegraphics[scale=0.7]{sudocode.png}
 \caption{The pseudo code of destination change}
@@ -231,9 +231,34 @@ The parameters that changed were:
 
 \subsection{Changing the food positions}
 
-The following figures, fig.\ref{}, fig.\ref{}, fig.\ref{} shown are the cost of time, velocity and force if the table's disposition is rectangular or circle. The distance between the food positions varies from 0 to 2.7. In order to simulate the crowding situation, we initialized 72 people starting from both upper corners of the hall (each corner has 36 people), and there are 8 tables with the capacity of 9, so that each person will have his/her seat at the end of the simulation.
+The following figures, fig.\ref{fig:foodcostt}, fig.\ref{fig:foodcostv}, fig.\ref{fig:foodcostf} shown are the cost of time, velocity and force if the table's disposition is rectangular or circle. The distance between the food positions varies from 0 to 2.7. In order to simulate the crowding situation, we initialized 72 people starting from both upper corners of the hall (each corner has 36 people), and there are 8 tables with the capacity of 9, so that each person will have his/her seat at the end of the simulation.
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.15]{foodchangecosttime.png}
+\caption{The cost of time as varying the food separation}
+\label{fig:foodcostt}
+\end{figure}
 
-The figure.\ref{} shows that, under the circle arrangement of table, the cost of time decrease 
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.15]{foodchangecostv.png}
+\caption{The cost of velocity as varying the food separation}
+\label{fig:foodcostv}
+\end{figure}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.15]{foodchangecostf.png}
+\caption{The cost of force as varying the food separation}
+\label{fig:foodcostf}
+\end{figure}
+The figure.\ref{fig:foodcostt} shows that, under the circle arrangement of table, the cost of time decrease monotonously as the two food positions separate themselves, while in the rectangular table arrangement, the cost of time fluctuates fiercely. The overall pattern of the cost of time indicates that under our social force model, the average time for each person to get their food and reach the tables has no significant correlation with the distance of two food positions.
+
+An interesting phenomenon occurs considering the cost of velocity in figure.\ref{fig:foodcostv}. The cost of velocity still decreases monotonously if table's deposition is circle, but the cost of velocity under rectangular arrangement experiences an down-"U" shape as the distance between two food positions changes. A possible explanation is that when food's separation is around 2, the food points are just below the tables, thus people that have fetched the food will be more likely blocked by the tables, especially when these tables are full.
+
+With circular deposition, the cost of force decreases along with the increase of the food separation. For the rectangular arrangement, the cost of force reaches its minimum when the distance of food locations is 1.
+
+From these three cost functions, we can conclude that for circular table deposition, the foods separate wider, people will be quicker, use less time and experience fewer forces, while if table's arrangement is rectangular, the best food separation distance is around 0.5 to 1, making both food points to be inside of the table lines, but separate a bit.
 
 \section{Summary and Outlook}
 
