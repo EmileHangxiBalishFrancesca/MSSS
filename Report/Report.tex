@@ -8,6 +8,9 @@
 \usepackage{epstopdf}
 \usepackage{natbib}
 \usepackage{amssymb, amsmath}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 
 %\title{How do participants act during an apéro at ETH}
@@ -82,6 +85,7 @@
 
 
 \section{Abstract}
+The motion of crowds has been investigated significantly in social sciences in order to predict the pedestrians' motion under particular circumstances. The model presented in this report describes the people's motion during an entertainment situation, i.e. an apero in ETHz. The algorithm is essentially based on the social force model\cite{Socialforce}, which treats people as particles abiding the Newtonian mechanics laws. We analyzed specific dispositions of tables and of the buffet organization in the apero. We also studied the influence of the number of the people on the participants' experience. The outcomes of the simulations show that the apero runs in a smoother way for some special organizations of the hall and for small number of guests.
 
 \section{Individual contributions}
 
@@ -192,7 +196,7 @@ We modelled the pedestrian's attraction to the objective with a constant pulling
 \subsection{Destination change}
 When people first reach to the Apéro hall, their first destination is the big table with the food on it. After they take their food, they usually want to carry their food to one of the small distributed tables on the hall. They tend to choose the table which is closer, not full and the one with, not more other people, than the capacity of the table goes to the table. In other words, if the maximum number of people that the table can afford is 5, and 7 people already on their way to that table, that person would not try to reach that table, because s/she knows s/he cannot make it. In our algorithm, people choose which table to go with the same logic. Pseudo code of this behavior given in Fig.\ref{fig:sudocode}:
 
-\begin{figure}[ht!]
+\begin{figure}[H]
 \centering
 \includegraphics[scale=0.7]{sudocode.png}
 \caption{The pseudo code of destination change}
@@ -228,6 +232,23 @@ The parameters that changed were:
     \item Disposition of tables (Circle or Rectangular)
     \item Distance between the food positions on the buffet table
 \end{itemize}
+
+Figure.\ref{fig:aperocircle} and figure.\ref{fig:aperorectangular} show the real simulation under different table arrangement, circle and rectangular.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.9\linewidth]{aperocircle.jpg}
+    \caption{The simulation snapshot when table arrangement is circular}
+    \label{fig:aperocircle}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.8\linewidth]{aperorectangular.jpg}
+    \caption{The simulation snapshot when table arrangement is rectangular}
+    \label{fig:aperorectangular}
+\end{figure}
+
+
 
 \subsection{Changing the number of participants}
 In this section, we simulated the influence of the number of participants, spanning from six to seventy-two. The number of tables was set to eight and its capacity to nine. Eventually, the distance between the food points was one.
@@ -293,7 +314,6 @@ An interesting phenomenon is displayed in figure.\ref{fig:foodcostv}. The cost o
 In case of a circular organization of the tables, the cost of force decreases along with the increase of the food separation. For the rectangular arrangement, the cost of force reaches its minimum when the distance of food locations is 1.
 
 From these three cost functions, we can conclude that for circular table deposition, the foods separate wider, people will be quicker, use less time and experience fewer forces, while if table's arrangement is rectangular, the best food separation distance is around 0.5 to 1, making both food points to be inside of the table lines, but separate a bit.
-
 
 \section{Summary and Outlook}
 In this report, we have used the social force model to simulate the participants' behaviours during an apero. We investigated three factors which maybe influence the speed, time and sensation of participants during the process of getting foods and then moving to tables: the number of participants, the deposition of tables and the distance of two food points' separation. We find that the more participants in the apero, the time used longer, the velocity smaller and induced forces become stronger. There is no significant difference between two table arrangements. The larger the distance between two food locations, the better for circular arrangement of tables, while foods should be in the center of the tables and separate a bit if table deposition is rectangular.
