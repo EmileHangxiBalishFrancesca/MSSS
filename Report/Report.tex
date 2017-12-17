@@ -229,6 +229,39 @@ The parameters that changed were:
     \item Distance between the food positions on the buffet table
 \end{itemize}
 
+\subsection{Changing the number of participants}
+
+Before running the simulations, we guested that the more the people in the apero, the less comfortable the party. About the influence of the two analyzed table dispositions (circular and rectangular), we were not able to predict any trend.
+
+The outcomes of the simulations confirmed our main concern and it can be shown by figure.\ref{fig:peoplecostt}, \ref{fig:peoplecostv}, \ref{fig:peoplecostf}.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.35]{peoplechangecosttime.png}
+\caption{The cost of time as varying the number of participants}
+\label{fig:peoplecostt}
+\end{figure}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.35]{peoplechangecostvelocity.png}
+\caption{The cost of velocity as varying the number of participants}
+\label{fig:peoplecostv}
+\end{figure}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.35]{peoplechangecostforces.png}
+\caption{The cost of force as varying the number of participants}
+\label{fig:peoplecostf}
+\end{figure}
+
+These images display respectively the time, velocity and force cost functions for a fixed number of tables and fixed configuration of the buffet table. The x-axis represents the number of participants spanning from six to seventy-two while the y-axis consists in the averaged costs and the associated variances. The blue and red lines respectively represent the circular and rectangular configurations of the tables.
+
+It can be immediately detected a linear increase of the average time necessary to reach the table with the increasing number of participants. For what concerns the time and velocity costs, i.e. the indicators we considered the most peculiar, we observed that people always prefer the rectangular table configuration. The proposed explanation of this behaviour relies on the obstacles along people's path: in case of a rectangular table configuration, most of the pedestrians move along the lateral isles rarely facing any fixed obstacle. On the other hand, given a circular table configuration many people have to dodge the tables in order to reach the food as fast as possible.
+
+Concluding, focusing on the rectangular table disposition, we noticed that the velocity cost is insignificant when few participants attend the apero; as the number of guests increases, the cost steeply increases and finally it stabilizes. It means that, in the case of few participants, rarely clusters of people and queues form and the apero participants usually walk at their desired velocity. Instead, clusters start developing for a number of guests greater than fifteen; this phenomenon does not degenerate for very crowded aperos.
+
 \subsection{Changing the food positions}
 
 The following figures, fig.\ref{fig:foodcostt}, fig.\ref{fig:foodcostv}, fig.\ref{fig:foodcostf} shown are the cost of time, velocity and force if the table's disposition is rectangular or circle. The distance between the food positions varies from 0 to 2.7. In order to simulate the crowding situation, we initialized 72 people starting from both upper corners of the hall (each corner has 36 people), and there are 8 tables with the capacity of 9, so that each person will have his/her seat at the end of the simulation.
